@@ -12,16 +12,73 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 // ============================================================================
 
 /**
+ * Pre-positioned case coordinates matching the original frontend mockCases layout.
+ * These hardcoded positions create the scattered, organic aesthetic from the original design.
+ */
+const PRESET_CASE_POSITIONS: Record<string, { x: number; y: number }> = {
+  'case-001': { x: 120, y: 80 },
+  'case-002': { x: 480, y: 200 },
+  'case-003': { x: 300, y: 420 },
+  'case-004': { x: 700, y: 100 },
+  'case-005': { x: 550, y: 350 },
+  'case-006': { x: 180, y: 300 },
+  'case-007': { x: 850, y: 250 },
+  'case-008': { x: 420, y: 60 },
+  'case-009': { x: 650, y: 450 },
+  'case-010': { x: 900, y: 400 },
+  'case-011': { x: 380, y: 500 },
+}
+
+/**
+ * Generates scattered fallback position for cases not in preset positions.
+ * Uses hash-based positioning to ensure consistency across reloads.
+ */
+function generateScatteredFallbackPosition(caseId: string): { x: number; y: number } {
+  // Simple hash function for consistent positioning
+  let hash = 0
+  for (let i = 0; i < caseId.length; i++) {
+    hash = ((hash << 5) - hash) + caseId.charCodeAt(i)
+    hash = hash & hash // Convert to 32-bit integer
+  }
+
+  // Scattered positioning across canvas (matching mockCases range)
+  const x = 100 + Math.abs(hash % 800)        // 100-900 range
+  const y = 60 + Math.abs((hash >> 16) % 440) // 60-500 range
+
+  return { x, y }
+}
+
+/**
+ * Gets position for a case, using preset positions first, then fallback for new cases.
+ */
+function getCasePosition(caseId: string, backendPosition?: { x: number; y: number }): { x: number; y: number } {
+  // Priority 1: Backend-provided position (for future persistence)
+  if (backendPosition) {
+    return backendPosition
+  }
+
+  // Priority 2: Preset position from mockCases (matches original aesthetic)
+  if (PRESET_CASE_POSITIONS[caseId]) {
+    return PRESET_CASE_POSITIONS[caseId]
+  }
+
+  // Priority 3: Scattered fallback for new cases
+  return generateScatteredFallbackPosition(caseId)
+}
+
+/**
  * Maps backend case from Neo4j/in-memory graph to frontend Case type
  */
 export function mapBackendCase(backendCase: any): Case {
+  const caseId = backendCase.case_id || backendCase.id
+
   return {
-    id: backendCase.case_id || backendCase.id,
-    codename: backendCase.label || backendCase.case_id || backendCase.id,
+    id: caseId,
+    codename: backendCase.label || caseId,
     location: extractLocation(backendCase),
     status: mapStatus(backendCase.status),
     lastUpdated: backendCase.updated_at || new Date().toISOString(),
-    position: { x: Math.random() * 1000, y: Math.random() * 500 }, // Random position for corkboard
+    position: getCasePosition(caseId, backendCase.position),
     hasHeat: checkHasHeat(backendCase),
     summary: backendCase.summary || extractSummary(backendCase),
     evidenceCount: backendCase.node_count || 0,
