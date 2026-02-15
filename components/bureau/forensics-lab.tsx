@@ -190,6 +190,7 @@ export function ForensicsLab({ caseId }: Props) {
         role: 'assistant',
         content: chatResponse.response || 'No response from AI',
         timestamp: new Date().toISOString(),
+        sources: chatResponse.sources,
       }
 
       setMessages(prev => [...prev, assistantMessage])

@@ -621,6 +621,26 @@ export class ShadowBureauAPI {
     return response.json()
   }
 
+  async getCaseStory(caseId: string): Promise<{ case_id: string; narrative: string; sections: Record<string, string>; key_moments: any[] }> {
+    const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/story`)
+
+    if (!response.ok) throw new Error(`Failed to get case story: ${response.statusText}`)
+    return response.json()
+  }
+
+  async getStoryAudio(caseId: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/story/audio`)
+
+    if (!response.ok) {
+      if (response.status === 501) {
+        throw new Error('Text-to-speech not configured. Please configure ElevenLabs API in backend settings.')
+      }
+      throw new Error('TTS service temporarily unavailable')
+    }
+
+    return response.blob()
+  }
+
   async deleteEvidence(caseId: string, evidenceId: string): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}`,

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { BookOpen, MapPin, Clock, FileText, Image, Video, CheckCircle, AlertTriangle, HelpCircle, Star } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { BookOpen, MapPin, Clock, FileText, Image, Video, CheckCircle, AlertTriangle, HelpCircle, Star, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { shadowBureauAPI } from '@/lib/api-client'
 import type { Case, Evidence } from '@/lib/types'
@@ -28,8 +28,10 @@ interface CaseStory {
 export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: Evidence[] }) {
   const [caseStory, setCaseStory] = useState<CaseStory | null>(null)
   const [loadingStory, setLoadingStory] = useState(false)
-  const [lastStoryRefresh, setLastStoryRefresh] = useState(Date.now())
   const [storyStale, setStoryStale] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioLoading, setAudioLoading] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const sortedEvidence = [...evidence].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -37,7 +39,57 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
 
   const evidenceCount = evidence.length
 
-  // Auto-refresh story when evidence count changes
+  // TTS Handler
+  const handleReadAloud = async () => {
+    if (isPlaying) {
+      audioRef.current?.pause()
+      setIsPlaying(false)
+      return
+    }
+
+    setAudioLoading(true)
+
+    try {
+      const audioBlob = await shadowBureauAPI.getStoryAudio(caseData.id)
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      const audio = new Audio(audioUrl)
+      audioRef.current = audio
+
+      audio.onended = () => {
+        setIsPlaying(false)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      audio.onerror = () => {
+        setIsPlaying(false)
+        setAudioLoading(false)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      await audio.play()
+      setIsPlaying(true)
+    } catch (error) {
+      console.error('TTS failed:', error)
+    } finally {
+      setAudioLoading(false)
+    }
+  }
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        const src = audioRef.current.src
+        if (src.startsWith('blob:')) {
+          URL.revokeObjectURL(src)
+        }
+      }
+    }
+  }, [])
+
+  // Refresh story when evidence count changes
   useEffect(() => {
     async function loadStory() {
       setLoadingStory(true)
@@ -46,7 +98,6 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
         if (response.ok) {
           const story = await response.json()
           setCaseStory(story)
-          setLastStoryRefresh(Date.now())
           setStoryStale(false)
         }
       } catch (error) {
@@ -56,19 +107,14 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
       }
     }
 
-    // Calculate debounce delay with max wait pattern
-    const timeSinceLastRefresh = Date.now() - lastStoryRefresh
-    const MAX_WAIT = 5000  // Match backend story_synthesis cooldown
-    const NORMAL_DEBOUNCE = 2000  // Normal debounce
-
-    // If 5+ seconds since last refresh, fetch immediately
-    // Otherwise, debounce for 2 seconds
-    const delay = timeSinceLastRefresh >= MAX_WAIT ? 100 : NORMAL_DEBOUNCE
-
-    setStoryStale(true)  // Mark story as stale immediately
-    const timer = setTimeout(loadStory, delay)
-    return () => clearTimeout(timer)
-  }, [caseData.id, evidenceCount, lastStoryRefresh])
+    // Only update when evidence count actually changes
+    if (evidenceCount > 0) {
+      setStoryStale(true)
+      // Debounce to avoid multiple rapid updates
+      const timer = setTimeout(loadStory, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [caseData.id, evidenceCount])
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -77,11 +123,39 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
         <div className="mx-auto max-w-2xl">
           {/* Case Header */}
           <div className="mb-8">
-            <div className="mb-4 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-[#A17120]" />
-              <span className="font-mono text-xs uppercase tracking-wider text-[#A17120]">Case Narrative</span>
-              {storyStale && !loadingStory && (
-                <span className="font-mono text-xs text-amber-500">Story updating...</span>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-[#A17120]" />
+                <span className="font-mono text-xs uppercase tracking-wider text-[#A17120]">Case Narrative</span>
+                {storyStale && !loadingStory && (
+                  <span className="font-mono text-xs text-amber-500">Story updating...</span>
+                )}
+              </div>
+
+              {caseStory?.narrative && (
+                <button
+                  onClick={handleReadAloud}
+                  disabled={audioLoading || loadingStory}
+                  className="flex items-center gap-1.5 rounded-sm border border-[#A17120]/30 bg-[#A17120]/10 px-2.5 py-1 font-mono text-xs text-[#A17120] transition-all hover:bg-[#A17120]/20 disabled:opacity-50"
+                  title={isPlaying ? "Stop reading" : "Read aloud"}
+                >
+                  {audioLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Loading...</span>
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <VolumeX className="h-3.5 w-3.5" />
+                      <span>Stop</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span>Read Aloud</span>
+                    </>
+                  )}
+                </button>
               )}
             </div>
             <h1 className="mb-3 font-sans text-3xl font-bold text-foreground">{caseData.codename}</h1>
@@ -142,13 +216,6 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
               <p className="font-sans text-sm italic text-muted-foreground">
                 Generating case narrative...
               </p>
-            </div>
-          )}
-
-          {/* Story Text */}
-          {caseData.storyText && (
-            <div className="mb-8">
-              <p className="font-sans text-base leading-7 text-foreground/80">{caseData.storyText}</p>
             </div>
           )}
 
