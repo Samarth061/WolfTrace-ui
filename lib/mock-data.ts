@@ -121,6 +121,18 @@ export const mockCases: Case[] = [
     evidenceCount: 5,
     storyText: 'Campus radio operators discovered an unauthorized broadcast on 107.3 FM between 3:00 and 4:00 AM. The broadcast contains repeated numeric sequences read by a synthesized voice. FCC records show no licensed operation on this frequency in the area.',
   },
+  {
+    id: 'case-011',
+    codename: 'The Phantom Fire',
+    location: 'Science Building - East Wing',
+    status: 'Debunked',
+    lastUpdated: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    position: { x: 380, y: 500 },
+    hasHeat: false,
+    summary: 'A student reported a fire in the Science Building, but official records confirm it was a false alarm. A fabricated image circulated on social media claiming to show the fire, revealing a coordinated misinformation campaign.',
+    evidenceCount: 3,
+    storyText: 'On February 13th at 10:15 PM, a student posted on social media claiming to witness a fire in the Science Building East Wing. Campus Safety responded immediately and found no fire, confirming it as a false alarm at 10:22 PM. However, a fake image purporting to show flames in the building circulated widely on student messaging apps. Forensic analysis revealed the image was digitally manipulated using an older fire photo from a different location. The coordinated timing suggests deliberate misinformation.',
+  },
 ]
 
 export const mockCaseConnections: CaseConnection[] = [
@@ -378,6 +390,81 @@ export const mockEvidence: Evidence[] = [
       duration: '00:35:00',
     },
   },
+  // Evidence for case-011 (The Phantom Fire)
+  {
+    id: 'ev-028', caseId: 'case-011', type: 'text', title: 'Social Media Post - Fire Sighting',
+    authenticity: 'suspicious',
+    extractedEntities: ['@campus_watcher_23', 'Science Building', 'East Wing'],
+    extractedLocations: ['Science Building - East Wing', 'Lab 3E'],
+    keyPoints: [
+      'Posted at 10:15 PM on Feb 13',
+      'Claims to see flames from windows',
+      'States fire alarm not activated',
+      'Account created 2 days prior to post'
+    ],
+    source: 'Public Tip',
+    timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: ['New account, suspicious timing'],
+    authenticitySignals: [
+      'Account age: 2 days (suspicious for emergency report)',
+      'No corroborating witnesses',
+      'Posted before any fire alarm or official response',
+      'Geolocation metadata missing from post'
+    ],
+  },
+  {
+    id: 'ev-029', caseId: 'case-011', type: 'text', title: 'Campus Safety Incident Report #2847',
+    authenticity: 'verified',
+    extractedEntities: ['Officer Martinez', 'Campus Safety', 'Incident #2847'],
+    extractedLocations: ['Science Building - East Wing', 'All floors'],
+    keyPoints: [
+      'Responded to social media report at 10:18 PM',
+      'Full building sweep completed by 10:22 PM',
+      'No fire, smoke, or elevated temperatures detected',
+      'Fire suppression system shows no activation',
+      'Confirmed false alarm in official log'
+    ],
+    source: 'Investigator',
+    timestamp: new Date(Date.now() - 24.5 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: ['Official response record', 'Contradicts social media claim'],
+    authenticitySignals: [
+      'Official Campus Safety incident report',
+      'Officer badge verified: Martinez #4219',
+      'Report filed in official emergency system',
+      'Building sensors data confirms no fire event',
+      'Timestamp matches dispatch log'
+    ],
+  },
+  {
+    id: 'ev-030', caseId: 'case-011', type: 'image', title: 'Alleged Fire Photo from Science Building',
+    contentUrl: '/placeholder-evidence.jpg',
+    authenticity: 'suspicious',
+    extractedEntities: ['Image Manipulation', 'Stock Photo', 'Digital Forgery'],
+    extractedLocations: ['Science Building (claimed)', 'Unknown (actual)'],
+    keyPoints: [
+      'Circulated on messaging apps at 10:25 PM (after official all-clear)',
+      'Shows flames in building windows',
+      'Reverse image search: matches 2019 warehouse fire in Ohio',
+      'Image edited to add Science Building signage',
+      'EXIF data stripped, preventing origin verification'
+    ],
+    source: 'Public Tip',
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: [
+      'Fabricated to support false narrative',
+      'Deliberately posted after official denial for confusion'
+    ],
+    authenticitySignals: [
+      'Reverse image match: Ohio warehouse fire (2019)',
+      'Metadata analysis: EXIF data intentionally removed',
+      'Forensic analysis: Digital cloning detected around signage',
+      'Lighting inconsistencies with Feb 13 weather conditions',
+      'Posted anonymously from burner account'
+    ],
+  },
 ]
 
 export const mockEvidenceConnections: EvidenceConnection[] = [
@@ -404,6 +491,10 @@ export const mockEvidenceConnections: EvidenceConnection[] = [
   { fromId: 'ev-023', toId: 'ev-024', relation: 'supports' },
   { fromId: 'ev-026', toId: 'ev-027', relation: 'supports' },
   { fromId: 'ev-024', toId: 'ev-025', relation: 'related' },
+  // Case 011 connections - Fire misinformation inference
+  { fromId: 'ev-029', toId: 'ev-028', relation: 'contradicts' }, // Official report contradicts student claim
+  { fromId: 'ev-030', toId: 'ev-028', relation: 'supports' },     // Fake image supports false student claim
+  { fromId: 'ev-029', toId: 'ev-030', relation: 'contradicts' }, // Official report contradicts fake image
 ]
 
 export const mockTips: Tip[] = [

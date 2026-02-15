@@ -35,21 +35,33 @@ export function mapBackendCase(backendCase: any): Case {
 export function mapBackendEvidence(backendNode: any, caseId: string): Evidence {
   const data = backendNode.data || {}
 
+  // Extract title using robust helper
+  const title = extractEvidenceTitle(backendNode)
+
+  // Log warning if critical content is missing
+  if (!data.text_body && !data.content && !data.title && !data.media_url) {
+    logMappingIssue('warn', 'Evidence missing content fields', {
+      nodeId: backendNode.id,
+      nodeType: backendNode.node_type,
+      availableFields: Object.keys(data),
+    })
+  }
+
   return {
     id: backendNode.id,
     caseId,
     type: mapEvidenceType(backendNode.node_type),
-    title: data.text_body?.substring(0, 50) || backendNode.id,
+    title,
     contentUrl: data.media_url,
     authenticity: mapAuthenticity(data),
-    extractedEntities: data.claims?.map((c: any) => c.text) || [],
-    extractedLocations: data.location ? [data.location.building || 'Unknown'] : [],
-    keyPoints: data.claims?.map((c: any) => c.text) || [],
+    extractedEntities: extractEntities(data),
+    extractedLocations: extractLocations(data),
+    keyPoints: extractKeyPoints(data),
     source: backendNode.node_type === 'report' ? 'Public Tip' : 'Investigator',
     timestamp: data.timestamp || backendNode.created_at || new Date().toISOString(),
     reviewed: data.reviewed || false,
     notes: [],
-    authenticitySignals: data.fact_check_results?.map((r: any) => r.claim_review) || [],
+    authenticitySignals: extractAuthenticitySignals(data),
   }
 }
 
@@ -67,6 +79,197 @@ export function mapBackendEdge(backendEdge: any): EvidenceConnection {
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * Development-only logger for backend mapping issues
+ */
+function logMappingIssue(severity: 'warn' | 'error', message: string, context: any) {
+  if (process.env.NODE_ENV === 'development') {
+    const logFn = severity === 'error' ? console.error : console.warn
+    logFn(`[API Mapping ${severity.toUpperCase()}] ${message}`, context)
+  }
+}
+
+/**
+ * Extracts displayable title from backend evidence node data
+ * Tries multiple fields in priority order with intelligent fallbacks
+ */
+function extractEvidenceTitle(backendNode: any, maxLength: number = 80): string {
+  const data = backendNode.data || {}
+
+  // Priority 1: Explicit title field
+  if (data.title?.trim()) {
+    return truncateText(data.title, maxLength)
+  }
+
+  // Priority 2: text_body (primary content)
+  if (data.text_body?.trim()) {
+    return truncateText(data.text_body, maxLength)
+  }
+
+  // Priority 3: content field (alternative)
+  if (data.content?.trim()) {
+    return truncateText(data.content, maxLength)
+  }
+
+  // Priority 4: First claim text
+  if (Array.isArray(data.claims) && data.claims.length > 0) {
+    const firstClaim = data.claims[0]
+    const claimText = typeof firstClaim === 'string' ? firstClaim : firstClaim?.text
+    if (claimText?.trim()) {
+      return truncateText(claimText, maxLength)
+    }
+  }
+
+  // Priority 5: First key point
+  if (Array.isArray(data.key_points) && data.key_points.length > 0 && data.key_points[0]?.trim()) {
+    return truncateText(data.key_points[0], maxLength)
+  }
+
+  // Priority 6: Media filename (for media-only evidence)
+  if (data.media_url) {
+    const filename = data.media_url.split('/').pop()
+    if (filename) return `Media: ${filename}`
+  }
+
+  // Priority 7: Descriptive fallback based on node type
+  return generateFallbackTitle(backendNode)
+}
+
+/**
+ * Truncates text intelligently at word boundaries
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (!text || text.length <= maxLength) return text
+
+  const truncated = text.substring(0, maxLength)
+  const lastSpace = truncated.lastIndexOf(' ')
+
+  // Break at word boundary if found in last 30% of text
+  if (lastSpace > maxLength * 0.7) {
+    return truncated.substring(0, lastSpace) + '...'
+  }
+
+  return truncated + '...'
+}
+
+/**
+ * Generates descriptive fallback title based on node metadata
+ */
+function generateFallbackTitle(backendNode: any): string {
+  const typeMap: Record<string, string> = {
+    'report': 'Witness Report',
+    'external_source': 'External Source',
+    'fact_check': 'Fact Check Result',
+    'media_variant': 'Media Analysis',
+  }
+
+  const baseTitle = typeMap[backendNode.node_type] || 'Evidence'
+
+  // Add timestamp if available
+  if (backendNode.data?.timestamp || backendNode.created_at) {
+    try {
+      const date = new Date(backendNode.data?.timestamp || backendNode.created_at)
+      const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      return `${baseTitle} - ${timeStr}`
+    } catch {
+      return baseTitle
+    }
+  }
+
+  return baseTitle
+}
+
+/**
+ * Extracts entities from various backend field formats
+ */
+function extractEntities(data: any): string[] {
+  if (Array.isArray(data.entities)) {
+    return data.entities.filter((e: any) => typeof e === 'string' && e.trim())
+  }
+
+  // Extract from claims if available
+  if (Array.isArray(data.claims)) {
+    const entities: string[] = []
+    data.claims.forEach((claim: any) => {
+      if (typeof claim === 'object' && Array.isArray(claim.entities)) {
+        entities.push(...claim.entities)
+      }
+    })
+    return [...new Set(entities)]
+  }
+
+  return []
+}
+
+/**
+ * Extracts locations from various backend field formats
+ */
+function extractLocations(data: any): string[] {
+  const locations: string[] = []
+
+  if (Array.isArray(data.locations)) {
+    locations.push(...data.locations.filter((l: any) => typeof l === 'string' && l.trim()))
+  }
+
+  if (data.location?.building) {
+    locations.push(data.location.building)
+  } else if (typeof data.location === 'string' && data.location.trim()) {
+    locations.push(data.location)
+  }
+
+  return locations.length > 0 ? locations : ['Unknown']
+}
+
+/**
+ * Extracts key points from various backend field formats
+ */
+function extractKeyPoints(data: any): string[] {
+  // Try key_points field first
+  if (Array.isArray(data.key_points) && data.key_points.length > 0) {
+    return data.key_points.filter((p: any) => typeof p === 'string' && p.trim())
+  }
+
+  // Fall back to claims
+  if (Array.isArray(data.claims) && data.claims.length > 0) {
+    return data.claims.map((c: any) => {
+      if (typeof c === 'string') return c
+      return c.text || c.statement || ''
+    }).filter(Boolean)
+  }
+
+  return []
+}
+
+/**
+ * Extracts authenticity signals from backend data
+ */
+function extractAuthenticitySignals(data: any): string[] {
+  const signals: string[] = []
+
+  if (Array.isArray(data.fact_check_results)) {
+    data.fact_check_results.forEach((result: any) => {
+      if (result.claim_review) signals.push(result.claim_review)
+    })
+  }
+
+  if (data.forensics?.ela_available) {
+    signals.push('Image forensics analysis completed')
+  }
+
+  if (data.forensics?.exif && Object.keys(data.forensics.exif).length > 0) {
+    signals.push('EXIF metadata verified')
+  }
+
+  return signals
+}
+
+/**
+ * Type guard to check if backend node has valid structure
+ */
+function isValidBackendNode(node: any): boolean {
+  return node && typeof node === 'object' && typeof node.id === 'string' && node.id.length > 0
+}
 
 function extractLocation(backendCase: any): string {
   if (backendCase.location) return backendCase.location
@@ -181,7 +384,9 @@ export class ShadowBureauAPI {
 
     return {
       case: mapBackendCase(data),
-      evidence: (data.nodes || []).map((n: any) => mapBackendEvidence(n, caseId)),
+      evidence: (data.nodes || [])
+        .filter(isValidBackendNode)
+        .map((n: any) => mapBackendEvidence(n, caseId)),
       connections: (data.edges || []).map(mapBackendEdge),
     }
   }

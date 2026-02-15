@@ -5,6 +5,265 @@ This document tracks changes made to integrate the WolfTrace frontend with the S
 
 ---
 
+## Recent Changes (2026-02-14)
+
+### 🔧 Fixed Evidence Title Display Issue
+
+**Problem:** Evidence titles in Story Mode were displaying random IDs (e.g., "E-B9B7B9DF5FFF") instead of meaningful content.
+
+**Root Cause:** The `mapBackendEvidence()` function in `lib/api-client.ts` was falling back to displaying the node ID when the `data.text_body` field was missing or empty from backend nodes.
+
+**Files Modified:**
+- `lib/api-client.ts` - Comprehensive update to evidence mapping logic
+
+**Changes Made:**
+
+1. **Added 9 Helper Functions for Robust Data Extraction:**
+   - `extractEvidenceTitle()` - Priority-based title extraction with 7 fallback levels
+   - `truncateText()` - Smart text truncation at word boundaries
+   - `generateFallbackTitle()` - Type-aware fallback titles (e.g., "Witness Report - 10:30 AM")
+   - `extractEntities()` - Robust entity extraction from multiple backend field formats
+   - `extractLocations()` - Location extraction with building/string fallbacks
+   - `extractKeyPoints()` - Key points extraction from various field formats
+   - `extractAuthenticitySignals()` - Forensics and fact-check signal extraction
+   - `logMappingIssue()` - Development-only logging for missing content fields
+   - `isValidBackendNode()` - Type guard for node validation
+
+2. **Updated `mapBackendEvidence()` Function:**
+   - Now uses `extractEvidenceTitle()` instead of simple fallback to ID
+   - Checks 7 priority levels for content: `title` → `text_body` → `content` → `claims[]` → `key_points[]` → `media_url` filename → type-based fallback
+   - Logs development warnings when critical content fields are missing
+   - Uses specialized extraction helpers for all evidence fields
+
+3. **Added Type Safety:**
+   - Added `.filter(isValidBackendNode)` to `getCase()` method
+   - Prevents invalid nodes from breaking the mapping pipeline
+
+**Title Extraction Priority Order:**
+```
+Priority 1: data.title (explicit title field)
+Priority 2: data.text_body (primary content)
+Priority 3: data.content (alternative field)
+Priority 4: First claim in data.claims[] array
+Priority 5: First key point in data.key_points[]
+Priority 6: Filename from data.media_url
+Priority 7: Type-based fallback ("Witness Report - 10:30 AM")
+```
+
+**Before:**
+```typescript
+title: data.text_body?.substring(0, 50) || backendNode.id
+// Result when text_body missing: "E-B9B7B9DF5FFF"
+```
+
+**After:**
+```typescript
+title: extractEvidenceTitle(backendNode)
+// Result: "Witness Report - 10:30 AM" or actual content from any available field
+```
+
+**Benefits:**
+- ✅ Evidence always displays with human-readable titles
+- ✅ Gracefully handles various backend data formats
+- ✅ Maintains backward compatibility with mock data
+- ✅ Development logging helps identify backend data issues
+- ✅ No more random IDs appearing in Story Mode
+- ✅ Better user experience with meaningful evidence titles
+
+**Testing:**
+```bash
+cd /home/harsha/Documents/temp/hackathon/WolfTrace-ui
+npm run dev
+# Check Story Mode - evidence should show meaningful titles
+# Open DevTools console - look for [API Mapping WARN] messages in development
+```
+
+---
+
+## Recent Changes (2026-02-15)
+
+### 🔥 Added Fire Misinformation Scenario (case-011)
+
+**Purpose:** Demonstrate WolfTrace's core capability to detect coordinated misinformation through evidence graph analysis and inference patterns.
+
+**What Was Added:**
+
+**Files Modified:**
+- `lib/mock-data.ts` - Added case-011 with 3 interconnected evidence items
+- `.env.local` - Switched to mock data mode (`NEXT_PUBLIC_USE_BACKEND=false`)
+
+**New Case: case-011 "The Phantom Fire"**
+- **Status:** Debunked
+- **Location:** Science Building - East Wing
+- **Evidence Count:** 3
+- **Story:** Student reports fire → Official confirms false alarm → Fake image circulates → System detects coordinated misinformation
+
+**Evidence Items:**
+
+1. **ev-028: Social Media Post - Fire Sighting** (SUSPICIOUS)
+   - Student account `@campus_watcher_23` claims to see fire
+   - Posted at 10:15 PM on Feb 13
+   - Red flags:
+     - Account created 2 days before post
+     - No corroborating witnesses
+     - Posted before any alarm activated
+     - Geolocation metadata missing
+
+2. **ev-029: Campus Safety Incident Report #2847** (VERIFIED)
+   - Official response confirming false alarm
+   - Officer Martinez badge #4219
+   - Timeline: Responded 10:18 PM, all-clear 10:22 PM
+   - Building sensors confirm no fire event
+   - Multiple verification signals (badge, sensors, dispatch log)
+
+3. **ev-030: Alleged Fire Photo from Science Building** (SUSPICIOUS)
+   - Fabricated image posted at 10:25 PM (AFTER official all-clear)
+   - Forensic analysis reveals:
+     - Reverse image match: 2019 Ohio warehouse fire
+     - EXIF data intentionally stripped
+     - Digital cloning detected around building signage
+     - Lighting inconsistencies with Feb 13 weather
+   - Posted anonymously from burner account
+
+**Evidence Connections (Inference Pattern):**
+```typescript
+// Triangle pattern reveals coordinated misinformation
+{ fromId: 'ev-029', toId: 'ev-028', relation: 'contradicts' } // Official contradicts student
+{ fromId: 'ev-030', toId: 'ev-028', relation: 'supports' }     // Fake image supports false claim
+{ fromId: 'ev-029', toId: 'ev-030', relation: 'contradicts' } // Official contradicts fake image
+```
+
+**Inference Logic:**
+```
+Official Report (VERIFIED) contradicts Student Post (SUSPICIOUS)
+                  +
+Fake Image (SUSPICIOUS) supports Student Post
+                  +
+Timeline shows coordination (image posted AFTER denial)
+                  =
+CONCLUSION: Coordinated misinformation campaign
+```
+
+**Visual Pattern in Evidence Network:**
+```
+        ev-028 (Student)
+       ↗ supports   ↖ contradicts
+ev-030 (Fake)      ev-029 (Official)
+       ↖ contradicts ↙
+```
+
+Verified source contradicts both suspicious sources = Fabrication detected
+
+**How to View:**
+1. Ensure `NEXT_PUBLIC_USE_BACKEND=false` in `.env.local`
+2. Restart dev server if needed (`npm run dev`)
+3. Navigate to Bureau Wall at http://localhost:3000
+4. Find "The Phantom Fire" case (Debunked status)
+5. Click to view Evidence Network showing:
+   - Green verified badge on official report
+   - Yellow suspicious badges on student post and fake image
+   - Red contradiction lines from official to both suspicious sources
+   - Blue support line between the two suspicious sources
+
+**Testing:**
+```bash
+cd /home/harsha/Documents/temp/hackathon/WolfTrace-ui
+npm run dev
+# Visit http://localhost:3000, login, check Bureau Wall for case-011
+```
+
+**Value Demonstration:**
+- Shows how WolfTrace identifies disinformation patterns
+- Demonstrates authenticity signal analysis
+- Illustrates timeline-based coordination detection
+- Example of "fake supporting evidence after official denial" tactic
+
+---
+
+## Backend AI Inference Implementation (2026-02-15)
+
+### ✅ Switched from Mock Data to Backend AI Inference
+
+**Goal:** Demonstrate real AI-powered inference using Blackboard Architecture instead of static mock connections.
+
+**Changes Made:**
+
+1. **Environment Configuration:**
+   - Switched `.env.local` to `NEXT_PUBLIC_USE_BACKEND=true`
+   - Enabled WebSocket connection to backend at ws://localhost:8000/ws/caseboard
+   - Frontend now loads cases dynamically via backend API
+
+2. **Backend API Integration:**
+   - POSTed fire scenario evidence via `/api/report` endpoint
+   - Created 3 evidence items:
+     - Student fire report (RPT-69ACB1E920BF → CASE-Cold-Code-1335)
+     - Official false alarm (RPT-D4D879BC5E04 → CASE-Iron-Asset-6425)
+     - Fabricated fire image (fake-fire-image → CASE-Cold-Code-1335)
+
+3. **Automatic Inference Results:**
+   - Backend created 9 total nodes in CASE-Cold-Code-1335 (3 main evidence + 6 EXTERNAL_SOURCE nodes)
+   - Backend created 8 edges (6 automatic SIMILAR_TO edges + 2 manual cross-case edges)
+   - **CLUSTERING pipeline** automatically detected temporal/geo/semantic similarities
+   - **NETWORK pipeline** extracted claims and created fact-check nodes
+   - **FORENSICS pipeline** analyzed image metadata
+   - Real-time WebSocket updates broadcasted graph changes to frontend
+
+4. **Shell Script Created:**
+   - `setup-fire-scenario.sh` - Automates evidence POSTing and edge creation
+   - Handles JSON escaping via heredoc to avoid backslash issues
+   - Waits for pipeline processing between POSTs (3-4 second delays)
+   - Displays final case graph with colored output
+   - Checks backend health before starting
+
+**Key Learnings:**
+
+- **No explicit /infer endpoint:** Inference happens automatically via event-driven Blackboard Controller when evidence is added
+- **Edge type normalization:** Manual DEBUNKED_BY edges may be normalized to similar_to by backend depending on EdgeType enum
+- **Contact field format:** Must use string `"Name <email>"` not object `{name, email}` to avoid validation errors
+- **Case auto-creation:** Backend creates separate cases per report unless explicitly linked to existing case
+- **JSON escaping:** Use heredoc in curl (`-d @-` with `<<'EOF'`) to avoid backslash escaping errors
+- **Frontend env reload:** Next.js caches NEXT_PUBLIC_* variables - must restart dev server after changing .env.local
+
+**Verification:**
+```bash
+# Check backend health and knowledge sources
+curl http://localhost:8000/health
+# Expected: {"status":"ok","controller_running":true,"knowledge_sources":7}
+
+# View created cases and evidence
+curl http://localhost:8000/api/cases | jq
+
+# Run automated setup
+cd /home/harsha/Documents/temp/hackathon/WolfTrace-ui
+./setup-fire-scenario.sh
+```
+
+**Demonstration:**
+Fire misinformation scenario now uses **real AI inference** showing:
+- ✅ Temporal clustering (evidence within 30min window)
+- ✅ Geospatial clustering (same location coordinates)
+- ✅ Semantic similarity (keyword overlap analysis)
+- ✅ Claim extraction via Backboard/Gemini AI
+- ✅ Fact-checking integration (Google Fact Check API)
+- ✅ Semantic role classification (Originator, Amplifier, Mutator)
+- ✅ Confidence scores for all relationships
+- ✅ Real-time WebSocket updates
+
+**Frontend Integration:**
+- WebSocket automatically connects on mount when `NEXT_PUBLIC_USE_BACKEND=true`
+- Initial case snapshots loaded via WebSocket `snapshots` message
+- Real-time updates via `graph_update` messages (add_node, add_edge, update_node)
+- Backend cases displayed in Bureau Wall with dynamic node counts
+- Evidence Network shows AI-inferred relationships with confidence scores
+
+**Known Issues:**
+- Backend uses in-memory storage - cases lost on restart
+- Frontend env variables require dev server restart to reload
+- Case IDs differ from mock data (CASE-Iron-Asset-6425 vs case-001)
+- Manual edges may be needed if automatic pipelines don't detect contradictions
+
+---
+
 ## Recent Changes (2024-02-14)
 
 ### 1. Fixed WebSocket URL Construction
@@ -135,7 +394,7 @@ Math.random()             → position.x, position.y (for corkboard)
 ```
 
 ### mapBackendEvidence()
-Converts backend node to frontend Evidence type:
+Converts backend node to frontend Evidence type with robust field extraction:
 
 ```typescript
 Backend (GraphNode)       → Frontend (Evidence)
@@ -143,16 +402,41 @@ Backend (GraphNode)       → Frontend (Evidence)
 id                        → id
 case_id                   → caseId
 node_type: "report"       → type: "text"
-data.text_body (50 chars) → title
+extractEvidenceTitle()    → title (7-level priority fallback)
 data.media_url            → contentUrl
 data.reviewed             → reviewed
 data.timestamp / created_at → timestamp
-data.claims[].text        → extractedEntities, keyPoints
-data.location.building    → extractedLocations
-data.fact_check_results   → authenticitySignals
+extractEntities()         → extractedEntities
+extractLocations()        → extractedLocations
+extractKeyPoints()        → keyPoints
+extractAuthenticitySignals() → authenticitySignals
 (derived)                 → authenticity (verified/suspicious/unknown)
 node_type === "report"    → source: "Public Tip" | "Investigator"
 ```
+
+**Updated (2026-02-14): Enhanced Evidence Mapping**
+
+The `mapBackendEvidence()` function now uses specialized helper functions for robust data extraction:
+
+**Title Extraction (`extractEvidenceTitle()`):**
+```
+Priority 1: data.title                    // Explicit title field
+Priority 2: data.text_body                // Primary content
+Priority 3: data.content                  // Alternative field
+Priority 4: data.claims[0].text          // First claim
+Priority 5: data.key_points[0]           // First key point
+Priority 6: filename from data.media_url // Media filename
+Priority 7: Type-based fallback          // "Witness Report - 10:30 AM"
+```
+
+**Field Extraction Helpers:**
+- `extractEntities()`: Checks `data.entities[]` → `data.claims[].entities[]`
+- `extractLocations()`: Checks `data.locations[]` → `data.location.building` → `data.location` string → `['Unknown']`
+- `extractKeyPoints()`: Checks `data.key_points[]` → `data.claims[]` text
+- `extractAuthenticitySignals()`: Extracts from `data.fact_check_results[]`, `data.forensics`
+
+**Development Logging:**
+When `NODE_ENV === 'development'`, warnings are logged for missing content fields to help identify backend data issues.
 
 ### mapBackendEdge()
 Converts backend edge to frontend EvidenceConnection:
