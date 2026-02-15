@@ -36,22 +36,17 @@ export function LandingHero({ onLampClick }: { onLampClick: () => void }) {
           <Lightbulb className="h-8 w-8" />
         </button>
 
-        <h1 className="font-sans text-6xl font-bold tracking-tight text-foreground md:text-8xl text-balance">
+        <h1 className="font-dune text-6xl font-bold tracking-tight text-foreground md:text-8xl text-balance">
           WolfTrace
         </h1>
 
-        <p className="mt-4 font-sans text-xl italic text-[#A17120] md:text-2xl">
+        <p className="mt-4 font-dune text-xl italic text-[#A17120] md:text-2xl">
           Trace the truth through the fog.
-        </p>
-
-        <p className="mt-6 max-w-xl font-sans text-base text-muted-foreground leading-relaxed">
-          An investigative desk for handling rumors, deceptive media, and campus
-          incidents — organized into casefiles and evidence trails.
         </p>
 
         <a
           href="#submit-tip"
-          className="mt-10 inline-flex items-center rounded-sm border border-[#A17120]/40 bg-[#A17120]/10 px-8 py-3 font-sans text-sm font-semibold tracking-wide text-[#A17120] transition-all hover:bg-[#A17120]/20 hover:border-[#A17120]/60"
+          className="mt-10 inline-flex items-center rounded-sm border border-[#A17120]/40 bg-[#A17120]/10 px-8 py-3 font-sans text-sm font-semibold tracking-wide text-[#A17120] transition-all hover:bg-[#A17120]/20 hover:border-[#A17120]/60 pulse-continuous"
         >
           File a Tip
         </a>

@@ -1,49 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-
 export function SubwayTrain() {
-  const audioRef = useRef<HTMLAudioElement>(null)
-
-  useEffect(() => {
-    // Try to play train sound when component mounts
-    const playAudio = async () => {
-      if (audioRef.current) {
-        try {
-          audioRef.current.volume = 0.3 // Set volume to 30%
-          await audioRef.current.play()
-        } catch (err) {
-          console.log('Audio autoplay prevented. Click anywhere to enable sound.')
-        }
-      }
-    }
-
-    playAudio()
-
-    // Enable audio on first user interaction
-    const enableAudio = () => {
-      if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.play().catch(err => console.log('Could not play audio:', err))
-      }
-    }
-
-    document.addEventListener('click', enableAudio, { once: true })
-
-    return () => {
-      document.removeEventListener('click', enableAudio)
-    }
-  }, [])
-
   return (
     <section className="relative px-6 py-0 -mt-32 -mb-0" aria-label="Subway train animation">
-      {/* Train sound effect - Add your train sound file to /public/sounds/train.mp3 */}
-      <audio
-        ref={audioRef}
-        src="/sounds/train.mp3"
-        loop
-        preload="auto"
-        className="hidden"
-      />
       <div className="mx-auto w-full max-w-none overflow-hidden">
         <svg
           version="1.1"
@@ -51,364 +10,303 @@ export function SubwayTrain() {
           xmlns="http://www.w3.org/2000/svg"
           x="0"
           y="0"
-          width="2800"
-          height="400"
-          viewBox="0 0 2800 400"
-          className="block h-56 w-full md:h-64 lg:h-72"
+          width="2993"
+          height="560"
+          viewBox="0 50 2993 480"
+          enableBackground="new 0 0 2993 560"
+          xmlSpace="preserve"
+          className="block h-64 w-full md:h-80 lg:h-96"
           preserveAspectRatio="xMidYMid meet"
           role="img"
-          aria-label="Subway train animation"
+          aria-label="Realistic vintage subway train animation"
         >
           <defs>
-            <linearGradient id="trainBody" x1="0" y1="0" x2="0" y2="1">
+            {/* Enhanced Bronze/Gold Gradients */}
+            <linearGradient id="trainBodyMain" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#C29D4B" />
-              <stop offset="100%" stopColor="#8B6914" />
+              <stop offset="33%" stopColor="#A17120" />
+              <stop offset="67%" stopColor="#8B6914" />
+              <stop offset="100%" stopColor="#6B5010" />
             </linearGradient>
+
+            <linearGradient id="trainHighlight" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#D4AF7A" />
+              <stop offset="100%" stopColor="#C29D4B" />
+            </linearGradient>
+
+            <linearGradient id="trainShadow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#5C4314" />
+              <stop offset="100%" stopColor="#2D1F0D" />
+            </linearGradient>
+
+            <radialGradient id="windowGlow">
+              <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.6" />
+              <stop offset="50%" stopColor="#A17120" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#A17120" stopOpacity="0" />
+            </radialGradient>
+
+            <linearGradient id="wheelGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#5a5a5a" />
+              <stop offset="100%" stopColor="#3a3a3a" />
+            </linearGradient>
+
+            {/* Filters */}
             <filter id="trainShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#2D1F0D" floodOpacity="0.4" />
+              <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#2D1F0D" floodOpacity="0.5" />
             </filter>
+
+            <filter id="weathering" x="0%" y="0%" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+              <feColorMatrix in="noise" type="saturate" values="0"/>
+              <feBlend in="SourceGraphic" in2="noise" mode="multiply" opacity="0.15"/>
+            </filter>
+
+            {/* Rivet Pattern */}
+            <pattern id="rivetPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="5" cy="20" r="1.5" fill="#5C4314" opacity="0.6"/>
+              <circle cx="35" cy="20" r="1.5" fill="#5C4314" opacity="0.6"/>
+            </pattern>
+
+            {/* Reusable Wheel Symbol */}
+            <symbol id="trainWheel" viewBox="0 0 30 30">
+              <circle cx="15" cy="15" r="15" fill="url(#wheelGradient)" stroke="#2D1F0D" strokeWidth="1"/>
+              <circle cx="15" cy="15" r="10" fill="none" stroke="#4A4A4A" strokeWidth="1.5"/>
+              <line x1="15" y1="5" x2="15" y2="25" stroke="#4A4A4A" strokeWidth="1"/>
+              <line x1="5" y1="15" x2="25" y2="15" stroke="#4A4A4A" strokeWidth="1"/>
+              <line x1="8.5" y1="8.5" x2="21.5" y2="21.5" stroke="#4A4A4A" strokeWidth="1"/>
+              <line x1="21.5" y1="8.5" x2="8.5" y2="21.5" stroke="#4A4A4A" strokeWidth="1"/>
+              <circle cx="15" cy="15" r="3" fill="#2D1F0D"/>
+            </symbol>
+
+            {/* Bogie (wheel assembly) */}
+            <symbol id="bogie" viewBox="0 0 120 50">
+              {/* Axle frame */}
+              <rect x="10" y="15" width="100" height="8" fill="#4A4A4A" stroke="#2D1F0D" strokeWidth="1"/>
+              {/* Front axle */}
+              <line x1="25" y1="35" x2="25" y2="19" stroke="#4A4A4A" strokeWidth="3"/>
+              {/* Rear axle */}
+              <line x1="95" y1="35" x2="95" y2="19" stroke="#4A4A4A" strokeWidth="3"/>
+              {/* Wheels */}
+              <use href="#trainWheel" x="10" y="20" width="30" height="30"/>
+              <use href="#trainWheel" x="80" y="20" width="30" height="30"/>
+              {/* Suspension springs */}
+              <path d="M 30 19 Q 32 16 34 19 T 38 19" stroke="#5a5a5a" strokeWidth="1.5" fill="none"/>
+              <path d="M 100 19 Q 102 16 104 19 T 108 19" stroke="#5a5a5a" strokeWidth="1.5" fill="none"/>
+            </symbol>
+
+            {/* Window with glow */}
+            <symbol id="trainWindow" viewBox="0 0 50 40">
+              <rect x="2" y="2" width="46" height="36" fill="#1a1a1a" stroke="#5C4314" strokeWidth="2" rx="2"/>
+              <rect x="2" y="2" width="46" height="36" fill="url(#windowGlow)" opacity="0.8" rx="2"/>
+              {/* Reflection highlight */}
+              <line x1="8" y1="8" x2="18" y2="18" stroke="white" strokeWidth="1" opacity="0.15"/>
+            </symbol>
           </defs>
 
           <style type="text/css">
             {`
-              .train-body { fill: url(#trainBody); stroke: #5C4314; stroke-width: 2; }
-              .train-window { fill: #1a1a1a; stroke: #3a3a3a; stroke-width: 1.5; }
-              .train-door { fill: #8B6914; stroke: #5C4314; stroke-width: 2; }
-              .train-door-line { stroke: #3a3a3a; stroke-width: 1; }
-              .train-panel { fill: none; stroke: #3a3a3a; stroke-width: 0.8; opacity: 0.5; }
-              .train-wheel { fill: #5a5a5a; stroke: #3a3a3a; stroke-width: 2; }
-              .train-wheel-inner { fill: #3a3a3a; }
-              .train-rail { fill: none; stroke: #2D1F0D; stroke-width: 3; }
-              .train-connector { fill: #5C4314; stroke: #3a3a3a; stroke-width: 1.5; }
+              .rail { fill: none; stroke: #2D1F0D; stroke-width: 3; }
+              .trainBody { fill: url(#trainBodyMain); stroke: #5C4314; stroke-width: 1.5; }
+              .trainRoof { fill: url(#trainHighlight); stroke: #5C4314; stroke-width: 1.5; }
+              .trainUnderframe { fill: url(#trainShadow); stroke: #2D1F0D; stroke-width: 1; }
+              .panelLine { fill: none; stroke: #5C4314; stroke-width: 1; opacity: 0.6; }
+              .doorFrame { fill: none; stroke: #5C4314; stroke-width: 2; }
+              .doorHandle { fill: #5a5a5a; stroke: #2D1F0D; stroke-width: 0.5; }
+              .vent { fill: none; stroke: #5C4314; stroke-width: 1; opacity: 0.5; }
+              .engineCover { fill: #2D1F0D; stroke: #1a1a1a; stroke-width: 1; }
+              .coupling { fill: #4A4A4A; stroke: #2D1F0D; stroke-width: 1; }
+              .weatherMark { fill: #8B6914; opacity: 0.3; }
+              .scratch { stroke: #D4AF7A; stroke-width: 0.5; opacity: 0.2; }
 
-              /* Smoke puffs */
-              .smoke {
-                fill: #7a7a7a;
-              }
-              .smoke-light {
-                fill: #9a9a9a;
-              }
-
-              @keyframes smokeFloat1 {
-                0%, 100% { transform: translate(0, 0); opacity: 0.85; }
-                25% { transform: translate(-3px, -10px); opacity: 0.75; }
-                50% { transform: translate(2px, -20px); opacity: 0.65; }
-                75% { transform: translate(-2px, -30px); opacity: 0.55; }
+              @keyframes windowPulse {
+                0%, 100% { opacity: 0.8; }
+                50% { opacity: 0.95; }
               }
 
-              @keyframes smokeFloat2 {
-                0%, 100% { transform: translate(0, 0); opacity: 0.8; }
-                25% { transform: translate(2px, -12px); opacity: 0.7; }
-                50% { transform: translate(-3px, -24px); opacity: 0.6; }
-                75% { transform: translate(1px, -36px); opacity: 0.5; }
+              .windowGlow {
+                animation: windowPulse 4s ease-in-out infinite;
               }
-
-              @keyframes smokeFloat3 {
-                0%, 100% { transform: translate(0, 0); opacity: 0.75; }
-                25% { transform: translate(-2px, -15px); opacity: 0.65; }
-                50% { transform: translate(3px, -30px); opacity: 0.55; }
-                75% { transform: translate(-1px, -45px); opacity: 0.45; }
-              }
-
-              .smoke-anim-1 { animation: smokeFloat1 4s ease-in-out infinite; }
-              .smoke-anim-2 { animation: smokeFloat2 5s ease-in-out infinite; }
-              .smoke-anim-3 { animation: smokeFloat3 6s ease-in-out infinite; }
             `}
           </style>
 
-          {/* Rails */}
-          <line className="train-rail" x1="0" y1="320" x2="2800" y2="320" />
-          <line className="train-rail" x1="0" y1="335" x2="2800" y2="335" />
+          {/* Static Rails */}
+          <line className="rail" x1="0" y1="400" x2="2993" y2="400" />
+          <line className="rail" x1="0" y1="420" x2="2993" y2="420" />
+          {/* Cross ties */}
+          {[...Array(16)].map((_, i) => (
+            <rect key={i} x={i * 200} y="395" width="12" height="30" fill="#5C4314" opacity="0.4"/>
+          ))}
 
+          {/* Animated Train Group */}
           <g filter="url(#trainShadow)">
             <g>
-              {/* CAR 1 (Front) */}
-              <g id="car1">
-                {/* Main body */}
-                <rect className="train-body" x="50" y="200" width="800" height="100" rx="6" />
+              {/* Lead Car (Front) - Modern Subway */}
+              <g id="lead-car">
+                {/* Undercarriage */}
+                <rect className="trainUnderframe" x="2900" y="360" width="260" height="20" rx="2"/>
+                <use href="#bogie" x="2910" y="350" width="140" height="60"/>
+                <use href="#bogie" x="2990" y="350" width="140" height="60"/>
 
-                {/* Top roof line */}
-                <rect className="train-body" x="50" y="195" width="800" height="5" rx="2" />
+                {/* Main body shell */}
+                <rect className="trainBody" x="2900" y="220" width="260" height="140" rx="8"/>
 
-                {/* Front nose */}
-                <path className="train-body" d="M 50 200 L 50 300 L 35 290 L 35 215 L 50 200 Z" />
+                {/* Roof highlight */}
+                <rect className="trainRoof" x="2900" y="220" width="260" height="35" rx="8"/>
 
-                {/* Windows - 9 windows */}
-                <rect className="train-window" x="80" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="165" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="250" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="335" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="420" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="505" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="590" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="675" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="760" y="220" width="70" height="40" rx="2" />
+                {/* Front nose/driver cab */}
+                <path className="trainBody" d="M 3160 220 Q 3180 240 3180 280 L 3180 360 L 3160 360 L 3160 220 Z" stroke="#5C4314" strokeWidth="2"/>
+
+                {/* Front windshield */}
+                <path d="M 3165 240 Q 3175 250 3175 270" stroke="#1a1a1a" strokeWidth="12" fill="none"/>
+                <path d="M 3165 240 Q 3175 250 3175 270" stroke="url(#windowGlow)" strokeWidth="10" fill="none" opacity="0.6"/>
+
+                {/* Side windows */}
+                <use href="#trainWindow" x="2915" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="3000" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="3085" y="270" width="65" height="50" className="windowGlow"/>
 
                 {/* Doors */}
-                <rect className="train-door" x="145" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="155" y1="225" x2="155" y2="285" />
-                <line className="train-door-line" x1="170" y1="225" x2="170" y2="285" />
+                <rect className="doorFrame" x="2985" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2977" y="305" width="6" height="12" rx="1"/>
 
-                <rect className="train-door" x="395" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="405" y1="225" x2="405" y2="285" />
-                <line className="train-door-line" x1="420" y1="225" x2="420" y2="285" />
-
-                <rect className="train-door" x="645" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="655" y1="225" x2="655" y2="285" />
-                <line className="train-door-line" x1="670" y1="225" x2="670" y2="285" />
-
-                {/* Ribbed lower section */}
-                <line className="train-panel" x1="50" y1="270" x2="850" y2="270" />
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <line
-                    key={`panel1-${i}`}
-                    className="train-panel"
-                    x1={50 + i * 20}
-                    y1="270"
-                    x2={50 + i * 20}
-                    y2="300"
-                  />
-                ))}
-
-                {/* Wheels */}
-                <g>
-                  <circle className="train-wheel" cx="150" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="150" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="150" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="300" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="300" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="300" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="550" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="550" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="550" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="700" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="700" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="700" cy="310" r="3" />
-                </g>
-
-                {/* Headlights */}
-                <circle cx="40" cy="230" r="5" fill="#A17120" opacity="0.95" />
-                <circle cx="40" cy="270" r="5" fill="#A17120" opacity="0.95" />
-
-                {/* Undercarriage */}
-                <rect className="train-body" x="50" y="300" width="800" height="6" />
+                {/* Rimmed Coupling */}
+                <rect className="coupling" x="2880" y="310" width="18" height="18" rx="3"/>
+                <circle className="coupling" cx="2889" cy="319" r="6" stroke="#5C4314" strokeWidth="2" fill="none"/>
               </g>
 
-              {/* Connector */}
-              <rect className="train-connector" x="845" y="245" width="25" height="25" rx="3" />
-              <circle cx="857" cy="257" r="6" fill="#3a3a3a" />
+              {/* Car 1 - Passenger Car */}
+              <g id="car-1">
+                {/* Undercarriage */}
+                <rect className="trainUnderframe" x="2630" y="360" width="240" height="20" rx="2"/>
+                <use href="#bogie" x="2640" y="350" width="140" height="60"/>
+                <use href="#bogie" x="2710" y="350" width="140" height="60"/>
 
-              {/* CAR 2 (Middle) */}
-              <g id="car2">
-                {/* Main body */}
-                <rect className="train-body" x="865" y="200" width="800" height="100" rx="6" />
+                {/* Main body shell */}
+                <rect className="trainBody" x="2630" y="220" width="240" height="140" rx="8"/>
 
-                {/* Top roof line */}
-                <rect className="train-body" x="865" y="195" width="800" height="5" rx="2" />
+                {/* Roof highlight */}
+                <rect className="trainRoof" x="2630" y="220" width="240" height="35" rx="8"/>
 
-                {/* Windows - 9 windows */}
-                <rect className="train-window" x="895" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="980" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1065" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1150" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1235" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1320" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1405" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1490" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1575" y="220" width="70" height="40" rx="2" />
+                {/* Windows */}
+                <use href="#trainWindow" x="2645" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2730" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2815" y="270" width="65" height="50" className="windowGlow"/>
 
                 {/* Doors */}
-                <rect className="train-door" x="960" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="970" y1="225" x2="970" y2="285" />
-                <line className="train-door-line" x1="985" y1="225" x2="985" y2="285" />
+                <rect className="doorFrame" x="2710" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2702" y="305" width="6" height="12" rx="1"/>
 
-                <rect className="train-door" x="1210" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="1220" y1="225" x2="1220" y2="285" />
-                <line className="train-door-line" x1="1235" y1="225" x2="1235" y2="285" />
+                <rect className="doorFrame" x="2795" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2787" y="305" width="6" height="12" rx="1"/>
 
-                <rect className="train-door" x="1460" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="1470" y1="225" x2="1470" y2="285" />
-                <line className="train-door-line" x1="1485" y1="225" x2="1485" y2="285" />
-
-                {/* Ribbed lower section */}
-                <line className="train-panel" x1="865" y1="270" x2="1665" y2="270" />
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <line
-                    key={`panel2-${i}`}
-                    className="train-panel"
-                    x1={865 + i * 20}
-                    y1="270"
-                    x2={865 + i * 20}
-                    y2="300"
-                  />
-                ))}
-
-                {/* Wheels */}
-                <g>
-                  <circle className="train-wheel" cx="965" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="965" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="965" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="1115" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="1115" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="1115" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="1365" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="1365" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="1365" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="1515" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="1515" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="1515" cy="310" r="3" />
-                </g>
-
-                {/* Undercarriage */}
-                <rect className="train-body" x="865" y="300" width="800" height="6" />
+                {/* Rimmed Coupling */}
+                <rect className="coupling" x="2870" y="310" width="18" height="18" rx="3"/>
+                <circle className="coupling" cx="2879" cy="319" r="6" stroke="#5C4314" strokeWidth="2" fill="none"/>
               </g>
 
-              {/* Connector */}
-              <rect className="train-connector" x="1660" y="245" width="25" height="25" rx="3" />
-              <circle cx="1672" cy="257" r="6" fill="#3a3a3a" />
+              {/* Car 2 - Passenger Car */}
+              <g id="car-2">
+                {/* Undercarriage */}
+                <rect className="trainUnderframe" x="2360" y="360" width="240" height="20" rx="2"/>
+                <use href="#bogie" x="2370" y="350" width="140" height="60"/>
+                <use href="#bogie" x="2440" y="350" width="140" height="60"/>
 
-              {/* CAR 3 (Rear) */}
-              <g id="car3">
-                {/* Main body */}
-                <rect className="train-body" x="1680" y="200" width="800" height="100" rx="6" />
+                {/* Main body shell */}
+                <rect className="trainBody" x="2360" y="220" width="240" height="140" rx="8"/>
 
-                {/* Top roof line */}
-                <rect className="train-body" x="1680" y="195" width="800" height="5" rx="2" />
+                {/* Roof highlight */}
+                <rect className="trainRoof" x="2360" y="220" width="240" height="35" rx="8"/>
 
-                {/* Rear end */}
-                <path className="train-body" d="M 2480 200 L 2480 300 L 2495 290 L 2495 215 L 2480 200 Z" />
-
-                {/* Windows - 9 windows */}
-                <rect className="train-window" x="1710" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1795" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1880" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="1965" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="2050" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="2135" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="2220" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="2305" y="220" width="70" height="40" rx="2" />
-                <rect className="train-window" x="2390" y="220" width="70" height="40" rx="2" />
+                {/* Windows */}
+                <use href="#trainWindow" x="2375" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2460" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2545" y="270" width="65" height="50" className="windowGlow"/>
 
                 {/* Doors */}
-                <rect className="train-door" x="1775" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="1785" y1="225" x2="1785" y2="285" />
-                <line className="train-door-line" x1="1800" y1="225" x2="1800" y2="285" />
+                <rect className="doorFrame" x="2440" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2432" y="305" width="6" height="12" rx="1"/>
 
-                <rect className="train-door" x="2025" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="2035" y1="225" x2="2035" y2="285" />
-                <line className="train-door-line" x1="2050" y1="225" x2="2050" y2="285" />
+                <rect className="doorFrame" x="2525" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2517" y="305" width="6" height="12" rx="1"/>
 
-                <rect className="train-door" x="2275" y="220" width="35" height="70" rx="1" />
-                <line className="train-door-line" x1="2285" y1="225" x2="2285" y2="285" />
-                <line className="train-door-line" x1="2300" y1="225" x2="2300" y2="285" />
-
-                {/* Ribbed lower section */}
-                <line className="train-panel" x1="1680" y1="270" x2="2480" y2="270" />
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <line
-                    key={`panel3-${i}`}
-                    className="train-panel"
-                    x1={1680 + i * 20}
-                    y1="270"
-                    x2={1680 + i * 20}
-                    y2="300"
-                  />
-                ))}
-
-                {/* Wheels */}
-                <g>
-                  <circle className="train-wheel" cx="1780" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="1780" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="1780" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="1930" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="1930" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="1930" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="2180" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="2180" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="2180" cy="310" r="3" />
-
-                  <circle className="train-wheel" cx="2330" cy="310" r="16" />
-                  <circle className="train-wheel-inner" cx="2330" cy="310" r="8" />
-                  <circle className="train-wheel-inner" cx="2330" cy="310" r="3" />
-                </g>
-
-                {/* Taillights */}
-                <circle cx="2490" cy="230" r="5" fill="#c45c5c" opacity="0.95" />
-                <circle cx="2490" cy="270" r="5" fill="#c45c5c" opacity="0.95" />
-
-                {/* Engine smokestack at the rear */}
-                <rect className="train-body" x="2430" y="180" width="14" height="20" rx="2" />
-
-                {/* Floating smoke trail with realistic movement */}
-                <g className="smoke-anim-1">
-                  <circle className="smoke" cx="2437" cy="172" r="5" />
-                  <circle className="smoke-light" cx="2437" cy="172" r="3" />
-                </g>
-
-                <g className="smoke-anim-2" style={{ animationDelay: '0.3s' }}>
-                  <circle className="smoke" cx="2434" cy="160" r="7" />
-                  <circle className="smoke-light" cx="2434" cy="160" r="4" />
-                </g>
-
-                <g className="smoke-anim-3" style={{ animationDelay: '0.6s' }}>
-                  <circle className="smoke" cx="2430" cy="146" r="9" />
-                  <circle className="smoke-light" cx="2430" cy="146" r="5.5" />
-                </g>
-
-                <g className="smoke-anim-1" style={{ animationDelay: '0.9s' }}>
-                  <circle className="smoke" cx="2426" cy="130" r="11" />
-                  <circle className="smoke-light" cx="2426" cy="130" r="7" />
-                </g>
-
-                <g className="smoke-anim-2" style={{ animationDelay: '1.2s' }}>
-                  <circle className="smoke" cx="2421" cy="112" r="13" />
-                  <circle className="smoke-light" cx="2421" cy="112" r="8.5" />
-                </g>
-
-                <g className="smoke-anim-3" style={{ animationDelay: '1.5s' }}>
-                  <circle className="smoke" cx="2416" cy="92" r="15" />
-                  <circle className="smoke-light" cx="2416" cy="92" r="10" />
-                </g>
-
-                <g className="smoke-anim-1" style={{ animationDelay: '1.8s' }}>
-                  <circle className="smoke" cx="2410" cy="70" r="17" />
-                  <circle className="smoke-light" cx="2410" cy="70" r="11.5" />
-                </g>
-
-                <g className="smoke-anim-2" style={{ animationDelay: '2.1s' }}>
-                  <circle className="smoke" cx="2404" cy="47" r="19" />
-                  <circle className="smoke-light" cx="2404" cy="47" r="13" />
-                </g>
-
-                <g className="smoke-anim-3" style={{ animationDelay: '2.4s' }}>
-                  <circle className="smoke" cx="2398" cy="24" r="21" />
-                  <circle className="smoke-light" cx="2398" cy="24" r="14.5" />
-                </g>
-
-                {/* Undercarriage */}
-                <rect className="train-body" x="1680" y="300" width="800" height="6" />
+                {/* Rimmed Coupling */}
+                <rect className="coupling" x="2600" y="310" width="18" height="18" rx="3"/>
+                <circle className="coupling" cx="2609" cy="319" r="6" stroke="#5C4314" strokeWidth="2" fill="none"/>
               </g>
 
-              {/* Animation */}
+              {/* Car 3 - Passenger Car */}
+              <g id="car-3">
+                {/* Undercarriage */}
+                <rect className="trainUnderframe" x="2090" y="360" width="240" height="20" rx="2"/>
+                <use href="#bogie" x="2100" y="350" width="140" height="60"/>
+                <use href="#bogie" x="2170" y="350" width="140" height="60"/>
+
+                {/* Main body shell */}
+                <rect className="trainBody" x="2090" y="220" width="240" height="140" rx="8"/>
+
+                {/* Roof highlight */}
+                <rect className="trainRoof" x="2090" y="220" width="240" height="35" rx="8"/>
+
+                {/* Windows */}
+                <use href="#trainWindow" x="2105" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2190" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2275" y="270" width="65" height="50" className="windowGlow"/>
+
+                {/* Doors */}
+                <rect className="doorFrame" x="2170" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2162" y="305" width="6" height="12" rx="1"/>
+
+                <rect className="doorFrame" x="2255" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="2247" y="305" width="6" height="12" rx="1"/>
+
+                {/* Rimmed Coupling */}
+                <rect className="coupling" x="2330" y="310" width="18" height="18" rx="3"/>
+                <circle className="coupling" cx="2339" cy="319" r="6" stroke="#5C4314" strokeWidth="2" fill="none"/>
+              </g>
+
+              {/* Car 4 - Passenger Car */}
+              <g id="car-4">
+                {/* Undercarriage */}
+                <rect className="trainUnderframe" x="1820" y="360" width="240" height="20" rx="2"/>
+                <use href="#bogie" x="1830" y="350" width="140" height="60"/>
+                <use href="#bogie" x="1900" y="350" width="140" height="60"/>
+
+                {/* Main body shell */}
+                <rect className="trainBody" x="1820" y="220" width="240" height="140" rx="8"/>
+
+                {/* Roof highlight */}
+                <rect className="trainRoof" x="1820" y="220" width="240" height="35" rx="8"/>
+
+                {/* Windows */}
+                <use href="#trainWindow" x="1835" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="1920" y="270" width="65" height="50" className="windowGlow"/>
+                <use href="#trainWindow" x="2005" y="270" width="65" height="50" className="windowGlow"/>
+
+                {/* Doors */}
+                <rect className="doorFrame" x="1900" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="1892" y="305" width="6" height="12" rx="1"/>
+
+                <rect className="doorFrame" x="1985" y="275" width="4" height="75" rx="1"/>
+                <rect className="doorHandle" x="1977" y="305" width="6" height="12" rx="1"/>
+
+                {/* Rimmed Coupling */}
+                <rect className="coupling" x="2060" y="310" width="18" height="18" rx="3"/>
+                <circle className="coupling" cx="2069" cy="319" r="6" stroke="#5C4314" strokeWidth="2" fill="none"/>
+              </g>
+
+              {/* Train Animation */}
               <animateTransform
                 attributeName="transform"
                 attributeType="XML"
                 type="translate"
                 begin="0.5s"
-                dur="10s"
-                values="-2700 0; 3000 0"
+                dur="12s"
+                values="-3400 0; 3400 0"
                 repeatCount="indefinite"
               />
             </g>
           </g>
+
         </svg>
       </div>
     </section>

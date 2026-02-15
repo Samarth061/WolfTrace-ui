@@ -1,8 +1,8 @@
 export type CaseStatus = 'Investigating' | 'Confirmed' | 'Debunked' | 'All-clear' | 'Closed'
-export type EvidenceType = 'text' | 'image' | 'video'
+export type EvidenceType = 'text' | 'image' | 'video' | 'audio'
 export type RelationType = 'supports' | 'contradicts' | 'related'
 export type Authenticity = 'verified' | 'suspicious' | 'unknown'
-export type TipCategory = 'Rumor' | 'Scam' | 'Safety' | 'Suspicious' | 'Other'
+export type TipCategory = 'Public' | 'Cop' | 'Investigator'
 export type UserRole = 'Detective' | 'Admin'
 
 export interface Case {

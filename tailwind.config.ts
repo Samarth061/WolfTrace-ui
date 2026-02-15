@@ -11,7 +11,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-crimson)', 'Georgia', 'serif'],
+        dune: ['var(--font-dune-rise)', 'sans-serif'],
+        sans: ['var(--font-montserrat)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-crimson)', 'Georgia', 'serif'],
         mono: ['var(--font-jetbrains)', 'monospace'],
       },
       colors: {
