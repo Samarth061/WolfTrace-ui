@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { Lightbulb } from 'lucide-react'
+import { AnimatedBackground } from './animated-background'
 
 export function LandingHero({ onLampClick }: { onLampClick: () => void }) {
   const clickCountRef = useRef(0)
@@ -19,7 +20,10 @@ export function LandingHero({ onLampClick }: { onLampClick: () => void }) {
   }
 
   return (
-    <header className="relative flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center overflow-hidden">
+    <header className="relative flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center overflow-hidden bg-gradient-to-b from-[#0a0806] via-[#1a1410] to-background">
+      {/* Animated particle network background */}
+      <AnimatedBackground />
+
       {/* Fog gradient overlay */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/80" />
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070401] via-[#070401]/60 to-transparent" />
@@ -36,24 +40,22 @@ export function LandingHero({ onLampClick }: { onLampClick: () => void }) {
           <Lightbulb className="h-8 w-8" />
         </button>
 
-        <h1 className="font-sans text-6xl font-bold tracking-tight text-foreground md:text-8xl text-balance">
+        <h1 className="font-dune text-6xl font-bold tracking-tight text-foreground md:text-8xl text-balance">
           WolfTrace
         </h1>
 
-        <p className="mt-4 font-sans text-xl italic text-[#A17120] md:text-2xl">
+        <p className="mt-4 font-dune text-xl italic text-[#A17120] md:text-2xl">
           Trace the truth through the fog.
-        </p>
-
-        <p className="mt-6 max-w-xl font-sans text-base text-muted-foreground leading-relaxed">
-          An investigative desk for handling rumors, deceptive media, and campus
-          incidents — organized into casefiles and evidence trails.
         </p>
 
         <a
           href="#submit-tip"
-          className="mt-10 inline-flex items-center rounded-sm border border-[#A17120]/40 bg-[#A17120]/10 px-8 py-3 font-sans text-sm font-semibold tracking-wide text-[#A17120] transition-all hover:bg-[#A17120]/20 hover:border-[#A17120]/60"
+          className="group relative mt-10 inline-flex items-center overflow-hidden rounded-sm border border-[#A17120]/40 bg-[#A17120]/10 px-8 py-3 font-sans text-sm font-semibold tracking-wide text-[#A17120] transition-all duration-300 hover:scale-105 hover:bg-[#A17120]/20 hover:border-[#A17120]/80 hover:shadow-lg hover:shadow-[#A17120]/30 active:scale-95 pulse-continuous"
         >
-          File a Tip
+          {/* Shine effect on hover */}
+          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+
+          <span className="relative">File a Tip</span>
         </a>
       </div>
     </header>

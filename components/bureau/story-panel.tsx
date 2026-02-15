@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { BookOpen, MapPin, Clock, FileText, Image, Video, CheckCircle, AlertTriangle, HelpCircle, Star } from 'lucide-react'
+import { BookOpen, MapPin, Clock, FileText, Image, Video, CheckCircle, AlertTriangle, HelpCircle } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
-import { shadowBureauAPI } from '@/lib/api-client'
 import type { Case, Evidence } from '@/lib/types'
 
 const typeIcons: Record<string, typeof FileText> = {
@@ -18,39 +16,10 @@ const authenticityIcons: Record<string, { icon: typeof CheckCircle; color: strin
   unknown: { icon: HelpCircle, color: 'text-[#A17120]' },
 }
 
-interface CaseStory {
-  case_id: string
-  narrative: string
-  sections: Record<string, string>
-  key_moments: Array<{ description: string; detail?: string }>
-}
-
 export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: Evidence[] }) {
-  const [caseStory, setCaseStory] = useState<CaseStory | null>(null)
-  const [loadingStory, setLoadingStory] = useState(false)
-
   const sortedEvidence = [...evidence].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
-
-  // Fetch case story on mount
-  useEffect(() => {
-    async function loadStory() {
-      setLoadingStory(true)
-      try {
-        const response = await fetch(`${shadowBureauAPI.baseUrl}/api/cases/${caseData.id}/story`)
-        if (response.ok) {
-          const story = await response.json()
-          setCaseStory(story)
-        }
-      } catch (error) {
-        console.error('Failed to load case story:', error)
-      } finally {
-        setLoadingStory(false)
-      }
-    }
-    loadStory()
-  }, [caseData.id])
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -81,48 +50,6 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
             <p className="font-mono text-[10px] uppercase tracking-wider text-[#A17120] mb-2">Summary</p>
             <p className="font-sans text-sm leading-relaxed text-foreground/90">{caseData.summary}</p>
           </div>
-
-          {/* AI-Generated Narrative */}
-          {caseStory && caseStory.narrative && (
-            <div className="mb-8">
-              <div className="mb-4 rounded-sm border border-border bg-card p-4">
-                <h3 className="mb-3 font-mono text-sm text-[#A17120]">CASE NARRATIVE</h3>
-                <p className="font-sans text-sm leading-relaxed text-foreground/90">
-                  {caseStory.narrative}
-                </p>
-              </div>
-
-              {/* Key Moments */}
-              {caseStory.key_moments && caseStory.key_moments.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <p className="mb-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">Key Moments</p>
-                  {caseStory.key_moments.map((moment, i) => (
-                    <div key={i} className="flex gap-2 rounded-sm border border-[#A17120]/20 bg-[#A17120]/5 p-3">
-                      <Star className="h-4 w-4 flex-shrink-0 text-[#A17120]" />
-                      <div className="flex-1">
-                        <span className="font-sans text-xs font-semibold text-foreground">
-                          {moment.description}
-                        </span>
-                        {moment.detail && (
-                          <p className="mt-1 font-sans text-xs text-muted-foreground">
-                            {moment.detail}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {loadingStory && (
-            <div className="mb-8 rounded-sm border border-border bg-card p-4">
-              <p className="font-sans text-sm italic text-muted-foreground">
-                Generating case narrative...
-              </p>
-            </div>
-          )}
 
           {/* Story Text */}
           {caseData.storyText && (

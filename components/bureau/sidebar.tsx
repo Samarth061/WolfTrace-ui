@@ -1,15 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutGrid, Briefcase, Trophy, Shield, Settings, LogOut, ChevronLeft
+  LayoutGrid, Briefcase, Trophy, Archive, Shield, Settings, LogOut, ChevronLeft
 } from 'lucide-react'
 import type { UserRole } from '@/lib/types'
 
 const navItems = [
   { href: '/bureau/wall', icon: LayoutGrid, label: 'Case Wall' },
   { href: '/bureau/solved', icon: Trophy, label: 'Solved Wall' },
+  { href: '/bureau/archive', icon: Archive, label: 'Archive' },
   { href: '/bureau/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { href: '/bureau/settings', icon: Settings, label: 'Settings' },
 ]
@@ -17,9 +19,16 @@ const navItems = [
 export function BureauSidebar({ badgeId, role }: { badgeId: string; role: UserRole }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   function handleLogout() {
+    setShowLogoutConfirm(true)
+  }
+
+  function confirmLogout() {
+    // Clear auth cookie
     document.cookie = 'wt-auth=;path=/;max-age=0'
+    // Redirect to homepage
     router.push('/')
   }
 
@@ -67,12 +76,41 @@ export function BureauSidebar({ badgeId, role }: { badgeId: string; role: UserRo
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 font-sans text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-card px-3 py-2 font-sans text-sm text-muted-foreground transition-all hover:border-[#A17120]/40 hover:bg-[#A17120]/10 hover:text-[#A17120]"
         >
-          <LogOut className="h-3 w-3" />
-          Leave Bureau
+          <LogOut className="h-4 w-4" />
+          Sign Off
         </button>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070401]/90 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-sm border border-border bg-[#160D04] p-6 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
+              <LogOut className="h-5 w-5 text-[#A17120]" />
+              <h2 className="font-sans text-lg font-bold text-foreground">Sign Off Confirmation</h2>
+            </div>
+            <p className="mb-6 font-sans text-sm text-muted-foreground">
+              Are you sure you want to sign off and return to the public homepage? Any unsaved work will be lost.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 rounded-sm border border-border bg-card px-4 py-2 font-sans text-sm text-foreground transition-all hover:bg-card/80"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 rounded-sm bg-[#A17120] px-4 py-2 font-sans text-sm font-semibold text-[#070401] transition-all hover:bg-[#A17120]/90"
+              >
+                Sign Off
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

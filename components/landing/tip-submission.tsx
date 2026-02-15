@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { FileText, Image, Video, Upload, Check, X } from 'lucide-react'
+import { FileText, Image, Video, Mic, Upload, Check, X } from 'lucide-react'
 import type { TipCategory, EvidenceType } from '@/lib/types'
 
-const categories: TipCategory[] = ['Rumor', 'Scam', 'Safety', 'Suspicious', 'Other']
+const categories: TipCategory[] = ['Public', 'Cop', 'Investigator']
 const locations = [
   'North Campus', 'South Campus', 'Arts District', 'Engineering Complex',
   'Library', 'Student Union', 'Stadium', 'Dining Hall', 'Parking Garage',
@@ -15,6 +15,7 @@ const typeConfig: { type: EvidenceType; icon: typeof FileText; label: string }[]
   { type: 'text', icon: FileText, label: 'Text' },
   { type: 'image', icon: Image, label: 'Image' },
   { type: 'video', icon: Video, label: 'Video' },
+  { type: 'audio', icon: Mic, label: 'Audio' },
 ]
 
 export function TipSubmission() {
@@ -32,7 +33,7 @@ export function TipSubmission() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!location) return
+    if (!location || !category) return
     const code = `WT-${Math.floor(1000 + Math.random() * 9000)}`
     setRefCode(code)
     setSubmitted(true)
@@ -83,11 +84,11 @@ export function TipSubmission() {
 
   return (
     <section id="submit-tip" className="px-6 py-20">
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-3xl">
         <h2 className="mb-2 text-center font-sans text-sm font-semibold uppercase tracking-[0.2em] text-[#764608]">
           Submit a Tip
         </h2>
-        <div className="mx-auto mb-8 h-px w-16 bg-[#764608]/40" />
+        <div className="mx-auto mb-12 h-px w-16 bg-[#764608]/40" />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type tabs */}
@@ -126,7 +127,9 @@ export function TipSubmission() {
               {file ? (
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-[#A17120]/10">
-                    {tipType === 'image' ? <Image className="h-5 w-5 text-[#A17120]" /> : <Video className="h-5 w-5 text-[#A17120]" />}
+                    {tipType === 'image' && <Image className="h-5 w-5 text-[#A17120]" />}
+                    {tipType === 'video' && <Video className="h-5 w-5 text-[#A17120]" />}
+                    {tipType === 'audio' && <Mic className="h-5 w-5 text-[#A17120]" />}
                   </div>
                   <div className="text-left">
                     <p className="font-sans text-sm text-foreground">{file.name}</p>
@@ -147,7 +150,7 @@ export function TipSubmission() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={tipType === 'image' ? 'image/*' : 'video/*'}
+                accept={tipType === 'image' ? 'image/*' : tipType === 'video' ? 'video/*' : 'audio/*'}
                 onChange={e => setFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
@@ -157,11 +160,12 @@ export function TipSubmission() {
           {/* Category */}
           <div>
             <label className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Category <span className="text-muted-foreground/60">(optional)</span>
+              Category <span className="text-destructive">*</span>
             </label>
             <select
               value={category}
               onChange={e => setCategory(e.target.value as TipCategory)}
+              required
               className="w-full rounded-sm border border-border bg-card px-4 py-2.5 font-sans text-sm text-foreground focus:border-[#764608] focus:outline-none focus:ring-1 focus:ring-[#764608]/40"
             >
               <option value="">Select category</option>
@@ -233,7 +237,7 @@ export function TipSubmission() {
 
           <button
             type="submit"
-            className="w-full rounded-sm bg-[#A17120] px-6 py-3 font-sans text-sm font-semibold text-[#070401] transition-all hover:bg-[#A17120]/90 active:scale-[0.98]"
+            className="w-full rounded-sm border border-[#A17120]/40 bg-[#A17120]/10 px-6 py-4 font-sans text-base font-bold text-[#A17120] transition-all hover:bg-[#A17120]/20 hover:border-[#A17120]/60 active:scale-[0.98] pulse-continuous uppercase tracking-wide"
           >
             File Tip
           </button>

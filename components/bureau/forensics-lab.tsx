@@ -5,8 +5,6 @@ import { Upload, Scan, Sparkles, Send, Loader2, Image as ImageIcon, Video as Vid
 import type { ForensicAnalysis, ChatMessage } from '@/lib/types'
 import { generateMockForensicAnalysis } from '@/lib/mock-data'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { shadowBureauAPI } from '@/lib/api-client'
-import { useWolfTrace } from '@/lib/store'
 
 interface Props {
   caseId: string
@@ -16,16 +14,12 @@ export function ForensicsLab({ caseId }: Props) {
   // File upload state
   const [file, setFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
-  const [evidenceId, setEvidenceId] = useState<string | null>(null)
 
   // Scanning state
   const [scanning, setScanning] = useState(false)
 
   // Analysis state
   const [analysis, setAnalysis] = useState<ForensicAnalysis | null>(null)
-
-  // Store access
-  const { addEvidence } = useWolfTrace()
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -76,58 +70,18 @@ export function ForensicsLab({ caseId }: Props) {
     setAnalysis(null) // Reset previous analysis
   }
 
-  async function handleScanForensics() {
+  function handleScanForensics() {
     if (!file) return
 
     setScanning(true)
 
-    try {
-      // 1. Upload file to backend
-      const uploadResult = await shadowBureauAPI.uploadFile(file)
-
-      // 2. Create evidence node with media
-      const evidenceData = await shadowBureauAPI.addEvidence(caseId, {
-        id: `ev-${Date.now()}`,
-        type: file.type.startsWith('image/') ? 'image' :
-              file.type.startsWith('video/') ? 'video' : 'text',
-        title: file.name,
-        contentUrl: uploadResult.file_url,
-        timestamp: new Date().toISOString(),
-      })
-
-      setEvidenceId(evidenceData.id)
-
-      // Add to local store
-      addEvidence(evidenceData)
-
-      // 3. Trigger forensic analysis
-      const forensicResults = await shadowBureauAPI.analyzeForensics(caseId, evidenceData.id)
-
-      // 4. Map to ForensicAnalysis type
-      const result: ForensicAnalysis = {
-        scanId: forensicResults.video_id || evidenceData.id,
-        fileName: file.name,
-        fileType: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio',
-        timestamp: new Date().toISOString(),
-        metrics: {
-          authenticityScore: forensicResults.authenticity_score || 0,
-          deepfakeProbability: forensicResults.deepfake_probability || 0,
-          manipulationProbability: forensicResults.manipulation_probability || 0,
-          qualityScore: forensicResults.quality_score || 0,
-          mlAccuracy: forensicResults.ml_accuracy || 0,
-        },
-        predictions: [],
-        findings: forensicResults.indicators || [],
-        metadata: {
-          fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-          format: file.type,
-          dimensions: '',
-        },
-      }
-
+    // Simulate scanning delay (2-3 seconds)
+    setTimeout(() => {
+      const result = generateMockForensicAnalysis(file)
       setAnalysis(result)
+      setScanning(false)
 
-      // Add message to chat
+      // Add a message to chat about the scan
       const scanMessage: ChatMessage = {
         id: `scan-${Date.now()}`,
         role: 'assistant',
@@ -135,24 +89,7 @@ export function ForensicsLab({ caseId }: Props) {
         timestamp: new Date().toISOString(),
       }
       setMessages(prev => [...prev, scanMessage])
-
-    } catch (error) {
-      console.error('Forensic analysis failed:', error)
-
-      // Fallback to mock analysis if API fails
-      const result = generateMockForensicAnalysis(file)
-      setAnalysis(result)
-
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: `API unavailable. Using mock analysis for "${file.name}". For real analysis, ensure the backend is running.`,
-        timestamp: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setScanning(false)
-    }
+    }, 2500)
   }
 
   function handleResetScan() {
@@ -160,10 +97,9 @@ export function ForensicsLab({ caseId }: Props) {
     setFilePreviewUrl(null)
     setAnalysis(null)
     setScanning(false)
-    setEvidenceId(null)
   }
 
-  async function handleSendMessage() {
+  function handleSendMessage() {
     if (!input.trim() || sending) return
 
     const userMessage: ChatMessage = {
@@ -174,29 +110,14 @@ export function ForensicsLab({ caseId }: Props) {
     }
 
     setMessages(prev => [...prev, userMessage])
-    const currentInput = input.trim()
     setInput('')
     setSending(true)
 
-    try {
-      // Call real API with evidence context
-      const evidenceIds = evidenceId ? [evidenceId] : []
-      const chatResponse = await shadowBureauAPI.chatWithEvidence(caseId, currentInput, evidenceIds)
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: chatResponse.response || 'No response from AI',
-        timestamp: new Date().toISOString(),
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
-      console.error('Chat failed:', error)
-
-      // Fallback to mock response
+    // Generate mock response based on keywords
+    setTimeout(() => {
       let response = ''
-      const lowerInput = currentInput.toLowerCase()
+
+      const lowerInput = input.toLowerCase()
 
       if (lowerInput.includes('authentic') || lowerInput.includes('manipulat') || lowerInput.includes('real')) {
         if (analysis) {
@@ -204,10 +125,30 @@ export function ForensicsLab({ caseId }: Props) {
         } else {
           response = 'Please upload and scan media first to analyze authenticity.'
         }
+      } else if (lowerInput.includes('when') || lowerInput.includes('time')) {
+        if (analysis) {
+          const timePrediction = analysis.predictions.find(p => p.label.toLowerCase().includes('temporal'))
+          response = timePrediction
+            ? timePrediction.description
+            : `The file was created at ${new Date(analysis.timestamp).toLocaleString()}. Metadata analysis shows ${analysis.metadata.duration || 'standard timestamp data'}.`
+        } else {
+          response = 'Upload media to perform temporal analysis.'
+        }
+      } else if (lowerInput.includes('where') || lowerInput.includes('location')) {
+        if (analysis) {
+          const locationPrediction = analysis.predictions.find(p => p.label.toLowerCase().includes('location'))
+          response = locationPrediction
+            ? locationPrediction.description
+            : 'No specific location data could be extracted from this evidence.'
+        } else {
+          response = 'Upload media to analyze location data.'
+        }
       } else if (lowerInput.includes('help') || lowerInput.includes('what can')) {
-        response = 'I can help you analyze uploaded media evidence. Ask about authenticity, manipulation detection, or forensic findings.'
+        response = 'I can help you analyze uploaded media evidence. You can ask about authenticity, manipulation detection, temporal analysis, location identification, or any findings from the forensic scan. Note: Full AI capabilities will be available when the backend is integrated.'
       } else {
-        response = 'API unavailable. Using fallback mode. Please ensure backend is running for full AI capabilities.'
+        response = analysis
+          ? `I've analyzed "${analysis.fileName}". The quality score is ${analysis.metrics.qualityScore.toFixed(1)}%. You can ask me about specific aspects like authenticity, timeline, or location details. What would you like to know?`
+          : 'Please upload media evidence first, then I can help you analyze it. You can also ask general questions about the case evidence.'
       }
 
       const assistantMessage: ChatMessage = {
@@ -218,9 +159,8 @@ export function ForensicsLab({ caseId }: Props) {
       }
 
       setMessages(prev => [...prev, assistantMessage])
-    } finally {
       setSending(false)
-    }
+    }, 800)
   }
 
   function getMetricColor(score: number): string {

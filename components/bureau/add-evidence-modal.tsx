@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, FileText, Image, Video } from 'lucide-react'
 import { useWolfTrace } from '@/lib/store'
-import type { Authenticity } from '@/lib/types'
+import type { EvidenceType, Authenticity } from '@/lib/types'
 
 interface Props {
   open: boolean
@@ -14,6 +14,7 @@ interface Props {
 export function AddEvidenceModal({ open, onClose, caseId }: Props) {
   const { addEvidence, evidence } = useWolfTrace()
   const [title, setTitle] = useState('')
+  const [type, setType] = useState<EvidenceType>('text')
   const [keyPoints, setKeyPoints] = useState('')
   const [entities, setEntities] = useState('')
   const [locations, setLocations] = useState('')
@@ -27,7 +28,7 @@ export function AddEvidenceModal({ open, onClose, caseId }: Props) {
     const newEvidence = {
       id: `ev-${String(evidence.length + 1).padStart(3, '0')}`,
       caseId,
-      type: 'text' as const,
+      type,
       title: title.trim(),
       authenticity: 'unknown' as Authenticity,
       extractedEntities: entities.split(',').map(s => s.trim()).filter(Boolean),
@@ -42,17 +43,24 @@ export function AddEvidenceModal({ open, onClose, caseId }: Props) {
 
     addEvidence(newEvidence)
     setTitle('')
+    setType('text')
     setKeyPoints('')
     setEntities('')
     setLocations('')
     onClose()
   }
 
+  const typeOptions: { value: EvidenceType; icon: typeof FileText; label: string }[] = [
+    { value: 'text', icon: FileText, label: 'Document' },
+    { value: 'image', icon: Image, label: 'Image' },
+    { value: 'video', icon: Video, label: 'Video' },
+  ]
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-sm border border-border bg-[#0d0804] shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="font-sans text-lg font-bold text-foreground">Add Text Evidence</h2>
+          <h2 className="font-sans text-lg font-bold text-foreground">Add Evidence</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -69,6 +77,27 @@ export function AddEvidenceModal({ open, onClose, caseId }: Props) {
               className="w-full rounded-sm border border-border bg-card px-3 py-2.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-[#764608] focus:outline-none"
               required
             />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">Type</label>
+            <div className="flex gap-2">
+              {typeOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setType(opt.value)}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-sm border px-3 py-2 font-sans text-sm transition-all ${
+                    type === opt.value
+                      ? 'border-[#A17120]/40 bg-[#A17120]/10 text-[#A17120]'
+                      : 'border-border text-muted-foreground hover:bg-card hover:text-foreground'
+                  }`}
+                >
+                  <opt.icon className="h-4 w-4" />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

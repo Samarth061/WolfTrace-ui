@@ -3,12 +3,10 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import type { Evidence, EvidenceConnection } from '@/lib/types'
 
-/**
- * Get the first letter of the evidence title for node label
- */
-function getNodeLabel(evidence: Evidence): string {
-  const title = evidence.title || 'Evidence'
-  return title.charAt(0).toUpperCase()
+const typeIcons: Record<string, string> = {
+  text: 'T',
+  image: 'I',
+  video: 'V',
 }
 
 const authenticityColors: Record<string, { fill: string; stroke: string; glow: string }> = {
@@ -247,12 +245,12 @@ export function EvidenceNetwork({ evidence, connections, selectedId, onSelect }:
         ctx.lineWidth = isSelected ? 2.5 : 1.5
         ctx.stroke()
 
-        // Node label (first letter of title)
+        // Type icon
         ctx.fillStyle = colors.stroke
         ctx.font = `bold ${node.radius * 0.7}px monospace`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText(getNodeLabel(node.evidence), node.x, node.y)
+        ctx.fillText(typeIcons[node.evidence.type] || '?', node.x, node.y)
         ctx.globalAlpha = 1
 
         // Title label below node
