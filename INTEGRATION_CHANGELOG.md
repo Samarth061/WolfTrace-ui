@@ -5,6 +5,282 @@ This document tracks changes made to integrate the WolfTrace frontend with the S
 
 ---
 
+## Recent Changes (2026-02-15)
+
+### 🎨 UI Integration - Forensics Lab & Component Consolidation
+
+**Goal:** Consolidate WolfTrace-ui and wolf-trace-ui-design into a single source of truth with full backend integration.
+
+**Changes Made:**
+
+#### 1. ✅ Forensics Lab Component Transferred
+**Source:** Copied from `WolfTrace-ui/components/bureau/forensics-lab.tsx` (510 lines)
+**Destination:** `wolf-trace-ui-design/components/bureau/forensics-lab.tsx`
+
+**Features Implemented:**
+- File upload dropzone (image/video/audio support)
+- Forensic analysis scanning animation (Loader2 + pulsing glow effect)
+- Comprehensive metrics display:
+  - Authenticity Score (percentage)
+  - Deepfake Risk (percentage)
+  - Manipulation Risk (percentage)
+  - Quality Score (percentage)
+  - ML Model Accuracy (percentage)
+- Color-coded metrics:
+  - Green (`#6aad6e`): > 80% (High confidence)
+  - Amber (`#A17120`): 50-80% (Medium confidence)
+  - Red (`#c45c5c`): < 50% (Low confidence)
+- Predictions section with confidence bars
+- Key findings list with bullet points
+- Evidence Assistant chat sidebar:
+  - Message history with timestamps
+  - Keyword-based mock responses
+  - Real-time chat interface
+- Metadata display (file size, format, dimensions, duration)
+- File preview for images, videos, and audio
+- "Scan New File" functionality to reset state
+
+#### 2. ✅ Forensics Lab Integrated into Case Workspace
+**File Modified:** `components/bureau/case-workspace.tsx`
+
+**Changes:**
+- Added `ForensicsLab` import from `./forensics-lab`
+- Added `Sparkles` icon import from lucide-react
+- Updated `Tab` type: `'network' | 'story'` → `'network' | 'story' | 'forensics'`
+- Added "Forensics Lab" tab button with Sparkles icon
+- Updated conditional rendering to show `<ForensicsLab caseId={caseId} />` when `tab === 'forensics'`
+
+**Result:**
+- Case workspace now has 3 tabs: Evidence Network, Story View, Forensics Lab
+- Forensics Lab accessible from any case
+- Seamless tab switching with consistent UI
+
+#### 3. ✅ Backend File Upload Endpoint Created
+**New File:** `wolf-trace-backend/app/routers/files.py` (78 lines)
+
+**Features:**
+- `POST /api/upload` endpoint for media file uploads
+- File type validation (image/video/audio only)
+- Saves to `/tmp/wolftrace-uploads/` directory
+- Returns file URL in `file://` format
+- Returns metadata: filename, content_type, size
+- Error handling for invalid file types and upload failures
+- `DELETE /api/upload/{filename}` endpoint for cleanup
+
+**File Modified:** `wolf-trace-backend/app/main.py`
+- Imported `files` router
+- Registered router with `app.include_router(files.router)`
+
+#### 4. ✅ Archive Section Removed (Deprecated)
+**Files Deleted:**
+- `/app/bureau/archive/` directory (entire directory)
+- `/app/bureau/archive/page.tsx`
+
+**File Modified:** `components/bureau/sidebar.tsx`
+- Removed `Archive` icon import from lucide-react
+- Removed Archive navigation item from `navItems` array
+- Navigation updated: Wall → Case → Solved → Admin → Settings (Archive removed)
+
+**Result:**
+- No more Archive page in navigation
+- Cleaner sidebar with 5 items instead of 6
+- Archive functionality deprecated as per user requirements
+
+#### 5. ✅ Evidence Node Color Schema Verification
+**Files Checked:**
+- `wolf-trace-ui-design/components/bureau/evidence-network.tsx`
+- `WolfTrace-ui/components/bureau/evidence-network.tsx`
+
+**Verification Result: ✅ Colors Already Matched**
+- Verified: `#6aad6e` (green) for verified/supports
+- Suspicious: `#c45c5c` (red) for suspicious/contradicts
+- Unknown: `#A17120` (amber) for unknown/related
+- Node fills, strokes, and glows all identical
+- Edge colors all identical
+- No changes required
+
+#### 6. ✅ Type Definitions Added
+**File Modified:** `lib/types.ts`
+
+**New Types Added:**
+```typescript
+export interface ForensicAnalysis {
+  scanId: string
+  fileName: string
+  fileType: 'image' | 'video' | 'audio'
+  timestamp: string
+  metrics: {
+    authenticityScore: number
+    manipulationProbability: number
+    qualityScore: number
+    deepfakeProbability: number
+    mlAccuracy: number
+  }
+  predictions: Array<{
+    label: string
+    confidence: number
+    description: string
+  }>
+  metadata: {
+    dimensions?: string
+    duration?: string
+    fileSize: string
+    format: string
+  }
+  findings: string[]
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+}
+```
+
+#### 7. ✅ Mock Forensic Analysis Function Added
+**File Modified:** `lib/mock-data.ts`
+
+**Changes:**
+- Added `ForensicAnalysis` import to types
+- Added `generateMockForensicAnalysis(file: File): ForensicAnalysis` function (113 lines)
+- Generates randomized but realistic forensic metrics
+- File-type-specific predictions (image/video/audio)
+- Findings based on authenticity score
+- Returns complete ForensicAnalysis object
+
+**Function Features:**
+- Randomized metrics within realistic ranges
+- Different prediction sets for image/video/audio
+- Authenticity-based findings generation
+- Timestamp and scan ID generation
+- File metadata extraction
+
+#### 8. ✅ Documentation Updated
+**File Modified:** `CLAUDE.md`
+
+**Updates:**
+- Added note that wolf-trace-ui-design is the PRIMARY UI codebase
+- Updated Key Features list: Forensics Lab marked as ✅
+- Updated Workflow: Forensics Lab marked as ✅
+- Removed Archive from workflow
+- Updated Case workspace description: "dual view" → "triple view"
+- Added Forensics Lab details under Case Management
+- Added color schema notes (#6aad6e, #c45c5c, #A17120)
+- Updated Pages list: Archive marked as REMOVED
+- Updated Missing Features: Forensics Lab marked as ✅ NOW IMPLEMENTED
+- Added comprehensive "UI Integration (February 2026)" section with:
+  - Component sources breakdown
+  - Recent changes summary
+  - Backend integration details
+  - Critical files modified
+  - Current implementation status
+  - Testing notes
+  - Color schema reference
+
+**File Modified:** `INTEGRATION_CHANGELOG.md` (this file)
+- Added this entry documenting all changes
+
+### Environment Configuration
+
+**No changes required** - `.env.local` already configured:
+```bash
+NEXT_PUBLIC_USE_BACKEND=true
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### Testing Steps
+
+1. **Backend Setup:**
+```bash
+cd wolf-trace-backend
+uv run uvicorn app.main:app --reload
+# Backend should start at http://localhost:8000
+```
+
+2. **Frontend Setup:**
+```bash
+cd wolf-trace-ui-design
+npm run dev
+# Frontend should start at http://localhost:3000
+```
+
+3. **Test Forensics Lab:**
+- Navigate to any case in Bureau Wall
+- Click "Forensics Lab" tab (Sparkles icon)
+- Upload an image, video, or audio file
+- Click "Scan Forensics"
+- Verify metrics display with color coding
+- Verify predictions and findings appear
+- Test Evidence Assistant chat sidebar
+- Click "Scan New File" to reset
+
+4. **Verify Archive Removal:**
+- Check sidebar navigation has only 5 items
+- Navigate to `/bureau/archive` should return 404
+- No Archive icon in navigation
+
+5. **Verify Evidence Colors:**
+- Open any case Evidence Network
+- Check verified nodes are green (#6aad6e)
+- Check suspicious nodes are red (#c45c5c)
+- Check unknown nodes are amber (#A17120)
+
+### Files Modified Summary
+
+**New Files:**
+1. `wolf-trace-ui-design/components/bureau/forensics-lab.tsx` (510 lines)
+2. `wolf-trace-backend/app/routers/files.py` (78 lines)
+
+**Modified Files:**
+3. `wolf-trace-ui-design/components/bureau/case-workspace.tsx` (14 lines added)
+4. `wolf-trace-ui-design/components/bureau/sidebar.tsx` (Archive removed)
+5. `wolf-trace-ui-design/lib/types.ts` (ForensicAnalysis + ChatMessage added)
+6. `wolf-trace-ui-design/lib/mock-data.ts` (generateMockForensicAnalysis added)
+7. `wolf-trace-backend/app/main.py` (files router registered)
+8. `wolf-trace-ui-design/CLAUDE.md` (comprehensive updates)
+9. `wolf-trace-ui-design/INTEGRATION_CHANGELOG.md` (this entry)
+
+**Deleted Files:**
+10. `wolf-trace-ui-design/app/bureau/archive/` (entire directory)
+
+### Known Issues & Future Work
+
+**Current Implementation:**
+- Forensics Lab uses mock data mode
+- Evidence Assistant chat uses keyword matching (not AI RAG)
+- File upload endpoint saves to `/tmp` (not production-ready)
+
+**Future Backend Integration:**
+- Connect file upload to `POST /api/upload`
+- Submit evidence with `media_url` to backend forensics pipeline
+- Map backend forensics data (pHash, EXIF, ELA, TwelveLabs) to UI metrics
+- Integrate Evidence Assistant with Backboard.io RAG
+- Stream forensic analysis progress via WebSocket
+
+**Production Considerations:**
+- Move file uploads to S3/Cloudinary
+- Add file size limits and validation
+- Implement proper error handling
+- Add loading states during upload
+- Add retry logic for failed uploads
+
+### Success Criteria ✅
+
+All success criteria met:
+1. ✅ Forensics Lab component from WolfTrace-ui successfully imported
+2. ✅ Forensics Lab fully integrated into Case Workspace as third tab
+3. ✅ Backend file upload endpoint created and registered
+4. ✅ Archive section completely removed (page deleted, navigation updated)
+5. ✅ Evidence node colors verified to match WolfTrace-ui schema
+6. ✅ Type definitions added for ForensicAnalysis and ChatMessage
+7. ✅ Mock forensic analysis function implemented
+8. ✅ Documentation updated (CLAUDE.md and INTEGRATION_CHANGELOG.md)
+9. ✅ No TypeScript errors
+10. ✅ Component renders correctly with mock data
+
+---
+
 ## Recent Changes (2026-02-14)
 
 ### 🔧 Fixed Evidence Title Display Issue

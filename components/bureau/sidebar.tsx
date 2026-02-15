@@ -3,14 +3,13 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutGrid, Briefcase, Trophy, Archive, Shield, Settings, LogOut, ChevronLeft
+  LayoutGrid, Briefcase, Trophy, Shield, Settings, LogOut, ChevronLeft
 } from 'lucide-react'
 import type { UserRole } from '@/lib/types'
 
 const navItems = [
   { href: '/bureau/wall', icon: LayoutGrid, label: 'Case Wall' },
   { href: '/bureau/solved', icon: Trophy, label: 'Solved Wall' },
-  { href: '/bureau/archive', icon: Archive, label: 'Archive' },
   { href: '/bureau/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { href: '/bureau/settings', icon: Settings, label: 'Settings' },
 ]

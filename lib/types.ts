@@ -111,3 +111,36 @@ export interface PrioritizedEvidence {
   recommended_action: string
   data: any
 }
+
+export interface ForensicAnalysis {
+  scanId: string
+  fileName: string
+  fileType: 'image' | 'video' | 'audio'
+  timestamp: string
+  metrics: {
+    authenticityScore: number
+    manipulationProbability: number
+    qualityScore: number
+    deepfakeProbability: number
+    mlAccuracy: number
+  }
+  predictions: Array<{
+    label: string
+    confidence: number
+    description: string
+  }>
+  metadata: {
+    dimensions?: string
+    duration?: string
+    fileSize: string
+    format: string
+  }
+  findings: string[]
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+}
