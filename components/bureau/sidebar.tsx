@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutGrid, Briefcase, Trophy, Shield, Settings, LogOut, ChevronLeft
@@ -27,8 +28,15 @@ export function BureauSidebar({ badgeId, role }: { badgeId: string; role: UserRo
     <aside className="flex h-full w-56 flex-col border-r border-border bg-[#0d0804]">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-4">
-        <div className="h-2 w-2 rounded-full bg-[#A17120] animate-pulse-glow" />
-        <span className="font-sans text-base font-bold tracking-tight text-foreground">WolfTrace</span>
+        <div className="relative h-7 w-7 flex-shrink-0">
+          <Image
+            src="/favicon.svg"
+            alt="WolfTrace Logo"
+            fill
+            className="object-contain"
+          />
+        </div>
+        <span className="font-[family-name:var(--font-dunerise)] text-lg font-bold tracking-tight text-foreground">WolfTrace</span>
       </div>
 
       {/* Nav */}
