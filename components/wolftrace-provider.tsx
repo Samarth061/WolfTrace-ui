@@ -27,6 +27,18 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
 
     async function loadBackendData() {
       try {
+        // First, seed the backend if it's empty
+        try {
+          const currentCases = await shadowBureauAPI.getCases()
+          if (currentCases.length === 0) {
+            console.log('🌱 Backend is empty, seeding with mock data...')
+            await shadowBureauAPI.seedBackend()
+            console.log('✅ Backend seeded successfully')
+          }
+        } catch (seedError) {
+          console.warn('⚠️  Failed to seed backend:', seedError)
+        }
+
         // Load cases
         const cases = await shadowBureauAPI.getCases()
         setState(s => ({ ...s, cases }))
@@ -193,12 +205,30 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, evidenceConnections: [...s.evidenceConnections, conn] }))
   }, [state.evidence])
 
-  const markEvidenceReviewed = useCallback((id: string) => {
-    setState(s => ({
-      ...s,
-      evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true } : e),
-    }))
-  }, [])
+  const markEvidenceReviewed = useCallback(async (id: string) => {
+    // Find the evidence to get its case ID
+    const evidence = state.evidence.find(e => e.id === id)
+    if (!evidence) return
+
+    if (USE_BACKEND) {
+      try {
+        await shadowBureauAPI.markEvidenceReviewed(evidence.caseId, id)
+        // WebSocket will update the state automatically, but update optimistically for better UX
+        setState(s => ({
+          ...s,
+          evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true } : e),
+        }))
+      } catch (error) {
+        console.error('Failed to mark evidence as reviewed:', error)
+      }
+    } else {
+      // Mock mode: just update local state
+      setState(s => ({
+        ...s,
+        evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true } : e),
+      }))
+    }
+  }, [state.evidence])
 
   const addTip = useCallback(async (tip: Tip) => {
     if (USE_BACKEND) {

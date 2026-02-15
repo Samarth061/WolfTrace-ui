@@ -3,7 +3,7 @@
  * Integrates WolfTrace frontend with Shadow Bureau FastAPI backend
  */
 
-import type { Case, Evidence, EvidenceConnection, Tip } from './types'
+import type { Case, Evidence, EvidenceConnection, Tip, InferenceResult } from './types'
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 
@@ -62,6 +62,8 @@ export function mapBackendEvidence(backendNode: any, caseId: string): Evidence {
     reviewed: data.reviewed || false,
     notes: [],
     authenticitySignals: extractAuthenticitySignals(data),
+    semanticRole: mapSemanticRole(data.semantic_role),
+    roleConfidence: data.role_confidence,
   }
 }
 
@@ -69,10 +71,18 @@ export function mapBackendEvidence(backendNode: any, caseId: string): Evidence {
  * Maps backend edges to frontend EvidenceConnection
  */
 export function mapBackendEdge(backendEdge: any): EvidenceConnection {
+  const data = backendEdge.data || {}
+
   return {
     fromId: backendEdge.source_id || backendEdge.source,
     toId: backendEdge.target_id || backendEdge.target,
     relation: mapRelationType(backendEdge.edge_type || backendEdge.type),
+    confidence: data.confidence,
+    metadata: {
+      temporal_score: data.temporal_score,
+      geo_score: data.geo_score,
+      semantic_score: data.semantic_score,
+    },
   }
 }
 
@@ -355,6 +365,19 @@ function mapRelationType(edgeType: string): EvidenceConnection['relation'] {
   return relationMap[edgeType?.toLowerCase()] || 'related'
 }
 
+function mapSemanticRole(backendRole?: string): Evidence['semanticRole'] {
+  if (!backendRole) return undefined
+
+  const roleMap: Record<string, Evidence['semanticRole']> = {
+    'originator': 'Originator',
+    'amplifier': 'Amplifier',
+    'mutator': 'Mutator',
+    'unwitting_sharer': 'Unwitting Sharer',
+  }
+
+  return roleMap[backendRole.toLowerCase()]
+}
+
 // ============================================================================
 // API Client
 // ============================================================================
@@ -425,6 +448,24 @@ export class ShadowBureauAPI {
 
     const data = await response.json()
     return mapBackendEvidence(data, caseId)
+  }
+
+  async markEvidenceReviewed(caseId: string, evidenceId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewed: true }),
+    })
+
+    if (!response.ok) throw new Error(`Failed to mark evidence as reviewed: ${response.statusText}`)
+  }
+
+  async getEvidenceInference(caseId: string, evidenceId: string): Promise<InferenceResult> {
+    const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}/inference`)
+
+    if (!response.ok) throw new Error(`Failed to get evidence inference: ${response.statusText}`)
+
+    return response.json()
   }
 
   async createEvidenceConnection(
@@ -498,6 +539,16 @@ export class ShadowBureauAPI {
   async healthCheck(): Promise<{ status: string; controller_running: boolean }> {
     const response = await fetch(`${this.baseUrl}/health`)
     if (!response.ok) throw new Error(`Health check failed: ${response.statusText}`)
+    return response.json()
+  }
+
+  // ======== Seed Data ========
+
+  async seedBackend(): Promise<{ status: string; cases: number; evidence: number; connections: number; tips: number }> {
+    const response = await fetch(`${this.baseUrl}/api/seed`, {
+      method: 'POST',
+    })
+    if (!response.ok) throw new Error(`Failed to seed backend: ${response.statusText}`)
     return response.json()
   }
 }
