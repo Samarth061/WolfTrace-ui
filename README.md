@@ -2,8 +2,9 @@
 
 **Next.js 15 frontend for WolfTrace campus intelligence platform**
 
-Noir-themed investigative interface built for Hack NCState 2026 (Siren's Call track).
+For Hack NCState 2026 (Siren's Call track).
 
+*WolfTrace** is a noir-styled campus incident workspace that transforms tips into case files: case wall, evidence network graphs and story timelines that help content moderators monitor incidents effectively and keep investigations organized (via an Agentic AI pipeline + RAG implementation). 
 ---
 
 ## 🚀 Quick Start
