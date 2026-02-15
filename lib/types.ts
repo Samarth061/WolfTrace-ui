@@ -145,4 +145,6 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   timestamp: string
+  sources?: string[]
+  isStreaming?: boolean
 }
