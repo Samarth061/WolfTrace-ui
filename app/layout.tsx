@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Crimson_Pro, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import './globals.css'
 
@@ -13,9 +14,17 @@ const jetbrains = JetBrains_Mono({
   variable: '--font-jetbrains',
 })
 
+const duneRise = localFont({
+  src: '../public/fonts/DuneRise.ttf',
+  variable: '--font-dunerise',
+})
+
 export const metadata: Metadata = {
   title: 'WolfTrace',
   description: 'Trace the truth through the fog. An investigative desk for handling rumors, deceptive media, and campus incidents.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export const viewport: Viewport = {
@@ -28,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${crimson.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${crimson.variable} ${jetbrains.variable} ${duneRise.variable}`}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   )

@@ -1,5 +1,5 @@
 export type CaseStatus = 'Investigating' | 'Confirmed' | 'Debunked' | 'All-clear' | 'Closed'
-export type EvidenceType = 'text' | 'image' | 'video'
+export type EvidenceType = 'text' | 'image' | 'video' | 'audio'
 export type RelationType = 'supports' | 'contradicts' | 'related'
 export type Authenticity = 'verified' | 'suspicious' | 'unknown'
 export type TipCategory = 'Rumor' | 'Scam' | 'Safety' | 'Suspicious' | 'Other'

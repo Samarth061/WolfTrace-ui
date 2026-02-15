@@ -7,6 +7,11 @@ import type { Case, Evidence, EvidenceConnection, Tip, InferenceResult } from '.
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 
+// Debug: Log the API URL to help diagnose environment variable issues
+if (typeof window !== 'undefined') {
+  console.log('🔍 WolfTrace API URL:', API_BASE_URL, '| From env:', process.env.NEXT_PUBLIC_API_URL || 'NOT SET')
+}
+
 // ============================================================================
 // Type Mappings: Backend ↔ Frontend
 // ============================================================================
