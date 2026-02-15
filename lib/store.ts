@@ -22,6 +22,7 @@ export interface WolfTraceActions {
   addCaseConnection: (conn: CaseConnection) => void
   addEvidence: (ev: Evidence) => void
   addEvidenceConnection: (conn: EvidenceConnection) => void
+  deleteEvidence: (id: string) => void
   markEvidenceReviewed: (id: string) => void
   addTip: (tip: Tip) => void
   updateCaseStatus: (id: string, status: Case['status']) => void

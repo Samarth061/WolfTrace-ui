@@ -41,6 +41,7 @@ export interface Evidence {
   authenticitySignals?: string[]
   semanticRole?: SemanticRole
   roleConfidence?: number
+  confidence?: number  // 0-1 score, 1.0 when reviewed by officer
 }
 
 export interface CaseConnection {

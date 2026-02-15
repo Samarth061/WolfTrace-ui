@@ -127,6 +127,13 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
               ...s,
               evidence: s.evidence.map(e => e.id === updatedEvidence.id ? updatedEvidence : e),
             }))
+          } else if (action === 'delete_node') {
+            const nodeId = payload.node_id || payload.id
+            setState(s => ({
+              ...s,
+              evidence: s.evidence.filter(e => e.id !== nodeId),
+              evidenceConnections: s.evidenceConnections.filter(c => c.fromId !== nodeId && c.toId !== nodeId),
+            }))
           }
         }
       },
@@ -205,6 +212,34 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, evidenceConnections: [...s.evidenceConnections, conn] }))
   }, [state.evidence])
 
+  const deleteEvidence = useCallback(async (id: string) => {
+    // Find the evidence to get its case ID
+    const evidence = state.evidence.find(e => e.id === id)
+    if (!evidence) return
+
+    if (USE_BACKEND) {
+      try {
+        await shadowBureauAPI.deleteEvidence(evidence.caseId, id)
+        // WebSocket will update the state automatically, but update optimistically for better UX
+        setState(s => ({
+          ...s,
+          evidence: s.evidence.filter(e => e.id !== id),
+          evidenceConnections: s.evidenceConnections.filter(c => c.fromId !== id && c.toId !== id),
+        }))
+      } catch (error) {
+        console.error('Failed to delete evidence:', error)
+        throw error // Re-throw to let caller handle
+      }
+    } else {
+      // Mock mode: just update local state
+      setState(s => ({
+        ...s,
+        evidence: s.evidence.filter(e => e.id !== id),
+        evidenceConnections: s.evidenceConnections.filter(c => c.fromId !== id && c.toId !== id),
+      }))
+    }
+  }, [state.evidence])
+
   const markEvidenceReviewed = useCallback(async (id: string) => {
     // Find the evidence to get its case ID
     const evidence = state.evidence.find(e => e.id === id)
@@ -216,7 +251,7 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
         // WebSocket will update the state automatically, but update optimistically for better UX
         setState(s => ({
           ...s,
-          evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true } : e),
+          evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true, confidence: 1.0 } : e),
         }))
       } catch (error) {
         console.error('Failed to mark evidence as reviewed:', error)
@@ -225,7 +260,7 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
       // Mock mode: just update local state
       setState(s => ({
         ...s,
-        evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true } : e),
+        evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true, confidence: 1.0 } : e),
       }))
     }
   }, [state.evidence])
@@ -257,7 +292,7 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
       value={{
         ...state,
         login, logout, updateCasePosition, addCase, addCaseConnection,
-        addEvidence, addEvidenceConnection, markEvidenceReviewed, addTip, updateCaseStatus,
+        addEvidence, addEvidenceConnection, deleteEvidence, markEvidenceReviewed, addTip, updateCaseStatus,
       }}
     >
       {children}
