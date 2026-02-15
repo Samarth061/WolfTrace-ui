@@ -6,7 +6,6 @@ import type { ForensicAnalysis, ChatMessage } from '@/lib/types'
 import { generateMockForensicAnalysis } from '@/lib/mock-data'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { shadowBureauAPI } from '@/lib/api-client'
-import { useWolfTrace } from '@/lib/store'
 
 interface Props {
   caseId: string
@@ -24,8 +23,7 @@ export function ForensicsLab({ caseId }: Props) {
   // Analysis state
   const [analysis, setAnalysis] = useState<ForensicAnalysis | null>(null)
 
-  // Store access
-  const { addEvidence } = useWolfTrace()
+  // Store access (WebSocket updates provide backend-created nodes)
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -97,8 +95,7 @@ export function ForensicsLab({ caseId }: Props) {
 
       setEvidenceId(evidenceData.id)
 
-      // Add to local store
-      addEvidence(evidenceData)
+      // Rely on WebSocket broadcast to populate the store with the backend-created node
 
       // 3. Trigger forensic analysis
       const forensicResults = await shadowBureauAPI.analyzeForensics(caseId, evidenceData.id)
