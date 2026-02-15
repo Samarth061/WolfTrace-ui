@@ -121,6 +121,7 @@ export function mapBackendEvidence(backendNode: any, caseId: string): Evidence {
     authenticitySignals: extractAuthenticitySignals(data),
     semanticRole: mapSemanticRole(data.semantic_role),
     roleConfidence: data.role_confidence,
+    confidence: data.confidence,  // 0-1 score, 1.0 when reviewed
   }
 }
 
@@ -547,6 +548,64 @@ export class ShadowBureauAPI {
         note: `${relation} connection`,
       }),
     })
+  }
+
+  // ======== Forensics ========
+
+  async uploadFile(file: File): Promise<{ file_url: string; filename: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch(`${this.baseUrl}/api/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) throw new Error(`Failed to upload file: ${response.statusText}`)
+    return response.json()
+  }
+
+  async analyzeForensics(caseId: string, evidenceId: string): Promise<any> {
+    const response = await fetch(
+      `${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}/forensics`,
+      { method: 'POST' }
+    )
+
+    if (!response.ok) throw new Error(`Failed to analyze forensics: ${response.statusText}`)
+    return response.json()
+  }
+
+  async getForensicResults(caseId: string, evidenceId: string): Promise<any | null> {
+    const response = await fetch(
+      `${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}/forensics`
+    )
+
+    if (response.status === 404) return null
+    if (!response.ok) throw new Error(`Failed to get forensic results: ${response.statusText}`)
+    return response.json()
+  }
+
+  async chatWithEvidence(caseId: string, message: string, evidenceIds: string[]): Promise<{ response: string; sources: string[] }> {
+    const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        evidence_ids: evidenceIds,
+      }),
+    })
+
+    if (!response.ok) throw new Error(`Failed to chat with evidence: ${response.statusText}`)
+    return response.json()
+  }
+
+  async deleteEvidence(caseId: string, evidenceId: string): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/api/cases/${caseId}/evidence/${evidenceId}`,
+      { method: 'DELETE' }
+    )
+
+    if (!response.ok) throw new Error(`Failed to delete evidence: ${response.statusText}`)
   }
 
   // ======== Tips/Reports ========
