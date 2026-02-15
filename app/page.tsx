@@ -2,6 +2,7 @@
 
 import { WolfTraceProvider } from '@/components/wolftrace-provider'
 import { LandingHero } from '@/components/landing/hero'
+import { SubwayTrain } from '@/components/landing/subway-train'
 import { LandingWhatWeDo } from '@/components/landing/what-we-do'
 import { TipSubmission } from '@/components/landing/tip-submission'
 import { LandingFooter } from '@/components/landing/footer'
@@ -15,6 +16,8 @@ export default function Page() {
     <WolfTraceProvider>
       <main className="min-h-screen bg-background">
         <LandingHero onLampClick={() => setDoorOpen(true)} />
+        <SubwayTrain />
+        <div className="py-1"></div>
         <LandingWhatWeDo />
         <TipSubmission />
         <LandingFooter onLampClick={() => setDoorOpen(true)} />

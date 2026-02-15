@@ -1,4 +1,4 @@
-import type { Case, Evidence, CaseConnection, EvidenceConnection, Tip } from './types'
+import type { Case, Evidence, CaseConnection, EvidenceConnection, Tip, ForensicAnalysis } from './types'
 
 export const mockCases: Case[] = [
   {
@@ -429,3 +429,117 @@ export const mockTips: Tip[] = [
     anonymous: false, name: 'Jordan Kim', timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), referenceCode: 'WT-4824',
   },
 ]
+
+export function generateMockForensicAnalysis(file: File): ForensicAnalysis {
+  const isVideo = file.type.startsWith('video/')
+  const isAudio = file.type.startsWith('audio/')
+  const isImage = file.type.startsWith('image/')
+
+  // Generate randomized but realistic metrics
+  const authenticityScore = 75 + Math.random() * 20
+  const manipulationProbability = Math.random() * 30
+  const qualityScore = 70 + Math.random() * 25
+  const deepfakeProbability = Math.random() * 25 // 0-25% deepfake probability
+  const mlAccuracy = 88 + Math.random() * 10 // 88-98% ML model accuracy
+
+  // File-type-specific predictions
+  const predictions = []
+
+  if (isVideo) {
+    predictions.push({
+      label: 'Location Identified',
+      confidence: 85 + Math.random() * 10,
+      description: 'Video likely recorded at North Campus near Bell Tower based on architectural features and lighting patterns',
+    })
+    predictions.push({
+      label: 'Temporal Analysis',
+      confidence: 75 + Math.random() * 10,
+      description: 'Lighting conditions and shadow analysis suggest recording between 11 PM - 1 AM',
+    })
+    predictions.push({
+      label: 'Audio Anomaly',
+      confidence: 80 + Math.random() * 10,
+      description: 'Unusual frequency pattern detected at 433 MHz range, consistent with wireless data transmission',
+    })
+  } else if (isImage) {
+    predictions.push({
+      label: 'Object Detection',
+      confidence: 88 + Math.random() * 10,
+      description: 'Multiple persons detected in frame. Facial features partially visible.',
+    })
+    predictions.push({
+      label: 'Location Match',
+      confidence: 82 + Math.random() * 10,
+      description: 'Background architecture matches Arts District Block 7 based on visual comparison',
+    })
+    predictions.push({
+      label: 'EXIF Analysis',
+      confidence: 90 + Math.random() * 8,
+      description: 'Metadata timestamps consistent. No signs of timestamp manipulation.',
+    })
+  } else if (isAudio) {
+    predictions.push({
+      label: 'Speaker Identity',
+      confidence: 78 + Math.random() * 12,
+      description: 'Voice pattern analysis suggests 2-3 distinct speakers in the recording',
+    })
+    predictions.push({
+      label: 'Background Noise',
+      confidence: 85 + Math.random() * 10,
+      description: 'Environmental sounds consistent with indoor campus setting. HVAC system audible.',
+    })
+    predictions.push({
+      label: 'Audio Quality',
+      confidence: 80 + Math.random() * 15,
+      description: 'Recording quality suggests consumer-grade microphone. Minor compression artifacts present.',
+    })
+  }
+
+  // Generate findings based on authenticity score
+  const findings = []
+  if (authenticityScore > 85) {
+    findings.push('No signs of digital manipulation detected in detailed frame analysis')
+    findings.push('Metadata timestamps are consistent with file creation date')
+    if (isImage) findings.push('EXIF data intact and shows no signs of tampering')
+    if (isVideo) findings.push('Video stream analysis shows continuous recording with no frame splicing')
+    if (isAudio) findings.push('Audio signature matches expected pattern for recording device')
+  } else if (authenticityScore > 70) {
+    findings.push('Minor inconsistencies detected but within acceptable range for authentic media')
+    findings.push('Metadata appears mostly intact with some standard compression artifacts')
+    if (isImage) findings.push('EXIF data present but some optional fields missing')
+    if (isVideo) findings.push('Video shows typical mobile device recording characteristics')
+  } else {
+    findings.push('Several anomalies detected requiring further investigation')
+    findings.push('Metadata shows some inconsistencies with reported capture time')
+    if (isImage) findings.push('EXIF data partially modified or stripped')
+    if (isVideo) findings.push('Evidence of post-processing or editing detected')
+  }
+
+  if (manipulationProbability > 20) {
+    findings.push(`Manipulation probability elevated (${manipulationProbability.toFixed(1)}%) - recommend additional verification`)
+  } else {
+    findings.push('Low manipulation probability indicates likely authentic source material')
+  }
+
+  return {
+    scanId: `scan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    fileName: file.name,
+    fileType: isVideo ? 'video' : isAudio ? 'audio' : 'image',
+    timestamp: new Date().toISOString(),
+    metrics: {
+      authenticityScore: Math.round(authenticityScore * 10) / 10,
+      manipulationProbability: Math.round(manipulationProbability * 10) / 10,
+      qualityScore: Math.round(qualityScore * 10) / 10,
+      deepfakeProbability: Math.round(deepfakeProbability * 10) / 10,
+      mlAccuracy: Math.round(mlAccuracy * 10) / 10,
+    },
+    predictions,
+    metadata: {
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      format: file.type,
+      dimensions: isImage || isVideo ? '1920x1080' : undefined,
+      duration: isVideo || isAudio ? '00:02:34' : undefined,
+    },
+    findings,
+  }
+}

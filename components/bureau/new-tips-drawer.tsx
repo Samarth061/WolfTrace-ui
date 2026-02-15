@@ -12,11 +12,11 @@ export function NewTipsDrawer({ open, onClose }: { open: boolean; onClose: () =>
   if (!open) return null
 
   return (
-    <div className="absolute right-0 top-0 z-40 flex h-full w-80 flex-col border-l border-border bg-[#0d0804]/98 shadow-2xl backdrop-blur-sm animate-fade-in-up">
+    <div className="absolute right-0 top-0 z-40 flex h-full w-80 flex-col border-l border-border bg-[#0b0b0b]/98 shadow-2xl backdrop-blur-sm animate-fade-in-up">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <h3 className="font-sans text-sm font-bold text-foreground">New Tips</h3>
-          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#A17120] px-1.5 font-mono text-[10px] font-bold text-[#070401]">
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#A855F7] px-1.5 font-mono text-[10px] font-bold text-[#0f0f0f]">
             {tips.length}
           </span>
         </div>
@@ -31,14 +31,14 @@ export function NewTipsDrawer({ open, onClose }: { open: boolean; onClose: () =>
           return (
             <div
               key={tip.id}
-              className="rounded-sm border border-border bg-card/50 p-3 transition-colors hover:border-[#764608]/30"
+              className="rounded-sm border border-border bg-card/50 p-3 transition-colors hover:border-[#A855F7]/30"
             >
               <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-[#A17120]/10">
-                  <Icon className="h-3.5 w-3.5 text-[#A17120]" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-[#A855F7]/10">
+                  <Icon className="h-3.5 w-3.5 text-[#A855F7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="inline-flex items-center rounded-sm bg-[#764608]/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[#764608]">
+                  <span className="inline-flex items-center rounded-sm bg-[#A855F7]/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[#A855F7]">
                     Public Tip
                   </span>
                 </div>
@@ -61,11 +61,11 @@ export function NewTipsDrawer({ open, onClose }: { open: boolean; onClose: () =>
               </div>
 
               <div className="flex gap-2">
-                <button className="flex flex-1 items-center justify-center gap-1.5 rounded-sm border border-border py-1.5 font-sans text-[10px] text-muted-foreground transition-colors hover:border-[#764608]/40 hover:text-foreground">
+                <button className="flex flex-1 items-center justify-center gap-1.5 rounded-sm border border-border py-1.5 font-sans text-[10px] text-muted-foreground transition-colors hover:border-[#A855F7]/40 hover:text-foreground">
                   <ExternalLink className="h-3 w-3" />
                   Create Case
                 </button>
-                <button className="flex flex-1 items-center justify-center gap-1.5 rounded-sm border border-border py-1.5 font-sans text-[10px] text-muted-foreground transition-colors hover:border-[#764608]/40 hover:text-foreground">
+                <button className="flex flex-1 items-center justify-center gap-1.5 rounded-sm border border-border py-1.5 font-sans text-[10px] text-muted-foreground transition-colors hover:border-[#A855F7]/40 hover:text-foreground">
                   <Paperclip className="h-3 w-3" />
                   Attach to Case
                 </button>
