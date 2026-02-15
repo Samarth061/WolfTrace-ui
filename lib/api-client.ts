@@ -407,6 +407,12 @@ function mapEvidenceType(nodeType: string): Evidence['type'] {
 }
 
 function mapAuthenticity(data: any): Evidence['authenticity'] {
+  // Check if backend sends authenticity as a string directly
+  if (data.authenticity === 'verified' || data.authenticity === 'suspicious' || data.authenticity === 'unknown') {
+    return data.authenticity
+  }
+
+  // Fallback to boolean/urgency checks
   if (data.verified) return 'verified'
   if (data.suspicious || data.urgency > 0.8) return 'suspicious'
   return 'unknown'

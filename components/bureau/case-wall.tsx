@@ -22,6 +22,7 @@ export function CaseWall() {
   const [tipsOpen, setTipsOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [activeCluster, setActiveCluster] = useState<string | null>(null)
 
   // Dragging string connections
   const [draggingFrom, setDraggingFrom] = useState<string | null>(null)
@@ -171,6 +172,36 @@ export function CaseWall() {
         >
           {/* SVG String Layer */}
           <svg className="pointer-events-none absolute inset-0 h-full w-full">
+            {/* Spotlight behind active cluster */}
+            {activeCluster && (() => {
+              const activeCase = cases.find(c => c.id === activeCluster)
+              if (!activeCase) return null
+              const center = getCaseCenter(activeCase)
+              return (
+                <defs>
+                  <radialGradient id="spotlight" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#5a3a1a" stopOpacity="0.25" />
+                    <stop offset="40%" stopColor="#3a2412" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#14100C" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+              )
+            })()}
+            {activeCluster && (() => {
+              const activeCase = cases.find(c => c.id === activeCluster)
+              if (!activeCase) return null
+              const center = getCaseCenter(activeCase)
+              return (
+                <ellipse
+                  cx={center.x}
+                  cy={center.y}
+                  rx="280"
+                  ry="240"
+                  fill="url(#spotlight)"
+                  className="transition-opacity duration-500"
+                />
+              )
+            })()}
             {caseConnections.map((conn, i) => {
               const fromCase = cases.find(c => c.id === conn.fromId)
               const toCase = cases.find(c => c.id === conn.toId)
@@ -219,6 +250,7 @@ export function CaseWall() {
               onStringDragStart={() => setDraggingFrom(c.id)}
               onStringDrop={() => handleStringDrop(c.id)}
               isDraggingString={!!draggingFrom}
+              onHoverChange={(isHovered) => setActiveCluster(isHovered ? c.id : null)}
             />
           ))}
         </div>
