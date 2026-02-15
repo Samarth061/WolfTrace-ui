@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Settings, User, Shield, Bell, Eye, Moon, Zap } from 'lucide-react'
 import { useWolfTrace } from '@/lib/store'
 
@@ -9,6 +9,29 @@ export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true)
   const [heatIndicators, setHeatIndicators] = useState(true)
   const [autoReview, setAutoReview] = useState(false)
+  const [useGroqAPI, setUseGroqAPI] = useState(false)
+
+  // Load GROQ preference from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('wolftrace_use_groq')
+    if (stored !== null) {
+      setUseGroqAPI(stored === 'true')
+    }
+  }, [])
+
+  // Save GROQ preference to localStorage when changed
+  const handleGroqToggle = () => {
+    const newValue = !useGroqAPI
+    setUseGroqAPI(newValue)
+    localStorage.setItem('wolftrace_use_groq', String(newValue))
+
+    // Dispatch event for WolfTrace provider to listen
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('groq-preference-changed', {
+        detail: { useGroq: newValue }
+      }))
+    }
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -122,6 +145,53 @@ export default function SettingsPage() {
                   <span className="sr-only">Toggle auto-review</span>
                 </button>
               </div>
+
+              {/* NEW: GROQ API Toggle */}
+              <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
+                <div className="flex items-center gap-3">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <div>
+                    <p className="font-sans text-sm text-foreground">Use GROQ API</p>
+                    <p className="font-sans text-[11px] text-muted-foreground">
+                      Ultra-fast inference for text analysis (claim extraction, alerts).
+                      Image/video forensics use Gemini vision.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleGroqToggle}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    useGroqAPI ? 'bg-amber-500' : 'bg-muted'
+                  }`}
+                  aria-label={useGroqAPI ? 'Disable GROQ API' : 'Enable GROQ API'}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-foreground shadow transition-transform ${
+                      useGroqAPI ? 'left-[22px]' : 'left-0.5'
+                    }`}
+                  />
+                  <span className="sr-only">Toggle GROQ API</span>
+                </button>
+              </div>
+
+              {/* Status indicator */}
+              {useGroqAPI !== undefined && (
+                <div className="rounded-sm border border-border bg-muted/30 p-3 mt-2">
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {useGroqAPI ? (
+                      <>
+                        <span className="text-amber-500">●</span> GROQ API enabled
+                        <span className="block mt-1 text-[10px]">(Mixtral 8x7B for claims, Llama3 70B for alerts)</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-blue-500">●</span> Gemini API enabled
+                        <span className="block mt-1 text-[10px]">(Gemini 2.0 Flash via Backboard)</span>
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

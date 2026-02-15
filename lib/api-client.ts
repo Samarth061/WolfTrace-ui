@@ -453,6 +453,19 @@ export class ShadowBureauAPI {
     this.baseUrl = baseUrl
   }
 
+  /**
+   * Helper to get LLM provider header from localStorage preference.
+   * Returns 'groq' if GROQ API is enabled, otherwise 'default' (Gemini).
+   */
+  private getLLMProviderHeader(): Record<string, string> {
+    if (typeof window === 'undefined') return {}
+
+    const useGroq = localStorage.getItem('wolftrace_use_groq') === 'true'
+    return {
+      'X-LLM-Provider': useGroq ? 'groq' : 'default'
+    }
+  }
+
   // ======== Cases ========
 
   async getCases(): Promise<Case[]> {
@@ -498,7 +511,10 @@ export class ShadowBureauAPI {
   async addEvidence(caseId: string, evidence: Partial<Evidence>): Promise<Evidence> {
     const response = await fetch(`${this.baseUrl}/api/cases/${caseId}/evidence`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getLLMProviderHeader()  // Add LLM provider preference
+      },
       body: JSON.stringify({
         id: evidence.id || `EVIDENCE-${Date.now()}`,
         type: evidence.type || 'text',

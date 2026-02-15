@@ -109,18 +109,40 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
           // Real-time update
           const { action, payload } = data
 
+          console.log('[WebSocket] Graph update:', action, payload.id || 'no-id')
+
           if (action === 'add_node') {
-            const newEvidence = mapBackendEvidence(payload, payload.case_id || '')
-            setState(s => ({
-              ...s,
-              evidence: [...s.evidence, newEvidence],
-            }))
+            // CRITICAL: Check for duplicates before adding
+            setState(s => {
+              const existingIds = s.evidence.map(e => e.id)
+              if (existingIds.includes(payload.id)) {
+                console.warn('[WebSocket] Duplicate node detected, skipping:', payload.id)
+                return s  // No change
+              }
+
+              const newEvidence = mapBackendEvidence(payload, payload.case_id || '')
+              return {
+                ...s,
+                evidence: [...s.evidence, newEvidence],
+              }
+            })
           } else if (action === 'add_edge') {
-            const newConnection = mapBackendEdge(payload)
-            setState(s => ({
-              ...s,
-              evidenceConnections: [...s.evidenceConnections, newConnection],
-            }))
+            // Validate both nodes exist before adding edge
+            setState(s => {
+              const fromExists = s.evidence.some(e => e.id === payload.source_id)
+              const toExists = s.evidence.some(e => e.id === payload.target_id)
+
+              if (!fromExists || !toExists) {
+                console.warn('[WebSocket] Orphaned edge detected (missing node), skipping:', payload)
+                return s  // No change
+              }
+
+              const newConnection = mapBackendEdge(payload)
+              return {
+                ...s,
+                evidenceConnections: [...s.evidenceConnections, newConnection],
+              }
+            })
           } else if (action === 'update_node') {
             const updatedEvidence = mapBackendEvidence(payload, payload.case_id || '')
             setState(s => ({
@@ -180,8 +202,8 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
   const addEvidence = useCallback(async (ev: Evidence) => {
     if (USE_BACKEND) {
       try {
-        const newEvidence = await shadowBureauAPI.addEvidence(ev.caseId, ev)
-        setState(s => ({ ...s, evidence: [...s.evidence, newEvidence] }))
+        await shadowBureauAPI.addEvidence(ev.caseId, ev)
+        // REMOVED: Optimistic update - rely solely on WebSocket add_node event
         return
       } catch (error) {
         console.error('Failed to add evidence to backend:', error)
@@ -220,12 +242,7 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
     if (USE_BACKEND) {
       try {
         await shadowBureauAPI.deleteEvidence(evidence.caseId, id)
-        // WebSocket will update the state automatically, but update optimistically for better UX
-        setState(s => ({
-          ...s,
-          evidence: s.evidence.filter(e => e.id !== id),
-          evidenceConnections: s.evidenceConnections.filter(c => c.fromId !== id && c.toId !== id),
-        }))
+        // REMOVED: Optimistic update - rely solely on WebSocket delete_node event
       } catch (error) {
         console.error('Failed to delete evidence:', error)
         throw error // Re-throw to let caller handle
@@ -248,11 +265,7 @@ export function WolfTraceProvider({ children }: { children: ReactNode }) {
     if (USE_BACKEND) {
       try {
         await shadowBureauAPI.markEvidenceReviewed(evidence.caseId, id)
-        // WebSocket will update the state automatically, but update optimistically for better UX
-        setState(s => ({
-          ...s,
-          evidence: s.evidence.map(e => e.id === id ? { ...e, reviewed: true, confidence: 1.0 } : e),
-        }))
+        // REMOVED: Optimistic update - rely solely on WebSocket update_node event
       } catch (error) {
         console.error('Failed to mark evidence as reviewed:', error)
       }

@@ -28,12 +28,16 @@ interface CaseStory {
 export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: Evidence[] }) {
   const [caseStory, setCaseStory] = useState<CaseStory | null>(null)
   const [loadingStory, setLoadingStory] = useState(false)
+  const [lastStoryRefresh, setLastStoryRefresh] = useState(Date.now())
+  const [storyStale, setStoryStale] = useState(false)
 
   const sortedEvidence = [...evidence].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 
-  // Fetch case story on mount
+  const evidenceCount = evidence.length
+
+  // Auto-refresh story when evidence count changes
   useEffect(() => {
     async function loadStory() {
       setLoadingStory(true)
@@ -42,6 +46,8 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
         if (response.ok) {
           const story = await response.json()
           setCaseStory(story)
+          setLastStoryRefresh(Date.now())
+          setStoryStale(false)
         }
       } catch (error) {
         console.error('Failed to load case story:', error)
@@ -49,8 +55,20 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
         setLoadingStory(false)
       }
     }
-    loadStory()
-  }, [caseData.id])
+
+    // Calculate debounce delay with max wait pattern
+    const timeSinceLastRefresh = Date.now() - lastStoryRefresh
+    const MAX_WAIT = 5000  // Match backend story_synthesis cooldown
+    const NORMAL_DEBOUNCE = 2000  // Normal debounce
+
+    // If 5+ seconds since last refresh, fetch immediately
+    // Otherwise, debounce for 2 seconds
+    const delay = timeSinceLastRefresh >= MAX_WAIT ? 100 : NORMAL_DEBOUNCE
+
+    setStoryStale(true)  // Mark story as stale immediately
+    const timer = setTimeout(loadStory, delay)
+    return () => clearTimeout(timer)
+  }, [caseData.id, evidenceCount, lastStoryRefresh])
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -62,6 +80,9 @@ export function StoryPanel({ caseData, evidence }: { caseData: Case; evidence: E
             <div className="mb-4 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-[#A17120]" />
               <span className="font-mono text-xs uppercase tracking-wider text-[#A17120]">Case Narrative</span>
+              {storyStale && !loadingStory && (
+                <span className="font-mono text-xs text-amber-500">Story updating...</span>
+              )}
             </div>
             <h1 className="mb-3 font-sans text-3xl font-bold text-foreground">{caseData.codename}</h1>
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground">

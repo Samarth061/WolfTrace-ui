@@ -135,6 +135,7 @@ export interface ForensicAnalysis {
     duration?: string
     fileSize: string
     format: string
+    status?: 'success' | 'fallback' | 'unknown'
   }
   findings: string[]
 }

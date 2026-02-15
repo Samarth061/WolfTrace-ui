@@ -6,6 +6,7 @@ import type { ForensicAnalysis, ChatMessage } from '@/lib/types'
 import { generateMockForensicAnalysis } from '@/lib/mock-data'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { shadowBureauAPI } from '@/lib/api-client'
+import { useWolfTrace } from '@/lib/store'
 
 interface Props {
   caseId: string
@@ -23,7 +24,8 @@ export function ForensicsLab({ caseId }: Props) {
   // Analysis state
   const [analysis, setAnalysis] = useState<ForensicAnalysis | null>(null)
 
-  // Store access (WebSocket updates provide backend-created nodes)
+  // Store access
+  const { addEvidence } = useWolfTrace()
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -95,16 +97,18 @@ export function ForensicsLab({ caseId }: Props) {
 
       setEvidenceId(evidenceData.id)
 
-      // Rely on WebSocket broadcast to populate the store with the backend-created node
+      // Add to local store
+      addEvidence(evidenceData)
 
       // 3. Trigger forensic analysis
       const forensicResults = await shadowBureauAPI.analyzeForensics(caseId, evidenceData.id)
 
       // 4. Map to ForensicAnalysis type
+      const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio'
       const result: ForensicAnalysis = {
         scanId: forensicResults.video_id || evidenceData.id,
         fileName: file.name,
-        fileType: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio',
+        fileType,
         timestamp: new Date().toISOString(),
         metrics: {
           authenticityScore: forensicResults.authenticity_score || 0,
@@ -119,6 +123,7 @@ export function ForensicsLab({ caseId }: Props) {
           fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
           format: file.type,
           dimensions: '',
+          status: forensicResults.status || 'unknown',  // 'success' or 'fallback'
         },
       }
 
@@ -368,6 +373,15 @@ export function ForensicsLab({ caseId }: Props) {
                   </div>
                 </div>
 
+                {/* Fallback Warning */}
+                {analysis.metadata.status === 'fallback' && (
+                  <div className="rounded-sm border border-amber-500/20 bg-amber-500/10 p-4">
+                    <p className="font-sans text-sm text-amber-500">
+                      ⚠️ Analysis API unavailable - showing estimated scores. Manual review required.
+                    </p>
+                  </div>
+                )}
+
                 {/* Metrics */}
                 <div>
                   <h4 className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -380,13 +394,16 @@ export function ForensicsLab({ caseId }: Props) {
                       <p className="mb-1 font-mono text-xs uppercase tracking-wider opacity-70">Authenticity Score</p>
                       <p className="font-sans text-2xl font-bold">{analysis.metrics.authenticityScore.toFixed(1)}%</p>
                     </div>
-                    <div className={`rounded-sm border p-4 ${getMetricColor(100 - analysis.metrics.deepfakeProbability)}`}>
-                      <p className="mb-1 font-mono text-xs uppercase tracking-wider opacity-70">Deepfake Risk</p>
-                      <p className="font-sans text-2xl font-bold">{analysis.metrics.deepfakeProbability.toFixed(1)}%</p>
-                      <p className="mt-1 font-mono text-xs opacity-60">
-                        {analysis.metrics.deepfakeProbability < 10 ? 'Very Low' : analysis.metrics.deepfakeProbability < 20 ? 'Low' : 'Moderate'}
-                      </p>
-                    </div>
+                    {/* Only show deepfake risk for videos */}
+                    {analysis.fileType === 'video' && (
+                      <div className={`rounded-sm border p-4 ${getMetricColor(100 - analysis.metrics.deepfakeProbability)}`}>
+                        <p className="mb-1 font-mono text-xs uppercase tracking-wider opacity-70">Deepfake Risk</p>
+                        <p className="font-sans text-2xl font-bold">{analysis.metrics.deepfakeProbability.toFixed(1)}%</p>
+                        <p className="mt-1 font-mono text-xs opacity-60">
+                          {analysis.metrics.deepfakeProbability < 10 ? 'Very Low' : analysis.metrics.deepfakeProbability < 20 ? 'Low' : 'Moderate'}
+                        </p>
+                      </div>
+                    )}
                     <div className={`rounded-sm border p-4 ${getMetricColor(100 - analysis.metrics.manipulationProbability)}`}>
                       <p className="mb-1 font-mono text-xs uppercase tracking-wider opacity-70">Manipulation Risk</p>
                       <p className="font-sans text-2xl font-bold">{analysis.metrics.manipulationProbability.toFixed(1)}%</p>
