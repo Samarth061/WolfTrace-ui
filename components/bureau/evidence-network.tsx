@@ -3,10 +3,12 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import type { Evidence, EvidenceConnection } from '@/lib/types'
 
-const typeIcons: Record<string, string> = {
-  text: 'T',
-  image: 'I',
-  video: 'V',
+/**
+ * Get the first letter of the evidence title for node label
+ */
+function getNodeLabel(evidence: Evidence): string {
+  const title = evidence.title || 'Evidence'
+  return title.charAt(0).toUpperCase()
 }
 
 const authenticityColors: Record<string, { fill: string; stroke: string; glow: string }> = {
@@ -49,22 +51,69 @@ export function EvidenceNetwork({ evidence, connections, selectedId, onSelect }:
   const lastPanPosRef = useRef({ x: 0, y: 0 })
   const [, forceUpdate] = useState(0)
 
-  // Initialize nodes in a circle layout
+  // Effect 1: Initial layout (runs once on mount or when going from 0 to N nodes)
   useEffect(() => {
-    const cx = 400
-    const cy = 300
-    const radius = Math.min(200, evidence.length * 30)
+    if (nodesRef.current.length === 0 && evidence.length > 0) {
+      // First render: use circular layout
+      const cx = 400
+      const cy = 300
+      const radius = Math.min(200, evidence.length * 30)
 
-    nodesRef.current = evidence.map((ev, i) => {
-      const angle = (2 * Math.PI * i) / evidence.length
-      return {
+      nodesRef.current = evidence.map((ev, i) => {
+        const angle = (2 * Math.PI * i) / evidence.length
+        return {
+          id: ev.id,
+          x: cx + radius * Math.cos(angle) + (Math.random() - 0.5) * 20,
+          y: cy + radius * Math.sin(angle) + (Math.random() - 0.5) * 20,
+          vx: 0,
+          vy: 0,
+          evidence: ev,
+          radius: ev.reviewed ? 24 : 20,
+        }
+      })
+      forceUpdate(n => n + 1)
+    }
+  }, [evidence.length])
+
+  // Effect 2: Incremental additions/deletions (dependency on evidence.length)
+  useEffect(() => {
+    if (nodesRef.current.length === 0) return  // Skip if not initialized
+
+    const existingIds = new Set(nodesRef.current.map(n => n.id))
+
+    // Add new nodes
+    const newEvidence = evidence.filter(ev => !existingIds.has(ev.id))
+    if (newEvidence.length > 0) {
+      const newNodes = newEvidence.map(ev => ({
         id: ev.id,
-        x: cx + radius * Math.cos(angle) + (Math.random() - 0.5) * 40,
-        y: cy + radius * Math.sin(angle) + (Math.random() - 0.5) * 40,
+        x: 400 + (Math.random() - 0.5) * 100,
+        y: 300 + (Math.random() - 0.5) * 100,
         vx: 0,
         vy: 0,
         evidence: ev,
         radius: ev.reviewed ? 24 : 20,
+      }))
+      nodesRef.current = [...nodesRef.current, ...newNodes]
+    }
+
+    // Remove deleted nodes
+    const evidenceIds = new Set(evidence.map(ev => ev.id))
+    nodesRef.current = nodesRef.current.filter(node => evidenceIds.has(node.id))
+
+    forceUpdate(n => n + 1)
+  }, [evidence.length])
+
+  // Effect 3: Update node properties when evidence data changes (NOT count)
+  useEffect(() => {
+    // Update existing nodes with latest evidence data
+    nodesRef.current = nodesRef.current.map(node => {
+      const updatedEvidence = evidence.find(ev => ev.id === node.id)
+      if (!updatedEvidence) return node  // Node being deleted, skip
+
+      return {
+        ...node,  // Preserve x, y, vx, vy (position and velocity)
+        evidence: updatedEvidence,  // Update evidence data
+        radius: updatedEvidence.reviewed ? 24 : 20,  // Update visual properties
       }
     })
     forceUpdate(n => n + 1)
@@ -245,12 +294,12 @@ export function EvidenceNetwork({ evidence, connections, selectedId, onSelect }:
         ctx.lineWidth = isSelected ? 2.5 : 1.5
         ctx.stroke()
 
-        // Type icon
+        // Node label (first letter of title)
         ctx.fillStyle = colors.stroke
         ctx.font = `bold ${node.radius * 0.7}px monospace`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText(typeIcons[node.evidence.type] || '?', node.x, node.y)
+        ctx.fillText(getNodeLabel(node.evidence), node.x, node.y)
         ctx.globalAlpha = 1
 
         // Title label below node

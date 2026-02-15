@@ -20,9 +20,10 @@ interface CaseCardProps {
   onStringDragStart: () => void
   onStringDrop: () => void
   isDraggingString: boolean
+  onHoverChange: (isHovered: boolean) => void
 }
 
-export function CaseCard({ caseData, onDrag, onClick, onStringDragStart, onStringDrop, isDraggingString }: CaseCardProps) {
+export function CaseCard({ caseData, onDrag, onClick, onStringDragStart, onStringDrop, isDraggingString, onHoverChange }: CaseCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posRef = useRef(caseData.position)
@@ -72,16 +73,16 @@ export function CaseCard({ caseData, onDrag, onClick, onStringDragStart, onStrin
       }}
       onMouseDown={handleMouseDown}
       onMouseUp={() => { if (isDraggingString) onStringDrop() }}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
     >
-      {/* Glow for heat */}
-      {caseData.hasHeat && (
-        <div className="absolute -inset-2 rounded-sm animate-pulse-glow" />
-      )}
-
       <div
-        className={`relative w-56 rounded-sm border bg-gradient-to-br from-[#1a1208] to-[#120c04] p-0 shadow-lg transition-shadow hover:shadow-xl ${
+        className={`relative w-56 rounded-sm border bg-gradient-to-br from-[#1a1208] to-[#120c04] p-0 transition-shadow ${
           caseData.hasHeat ? 'border-[#A17120]/40' : 'border-[#764608]/20'
         }`}
+        style={{
+          boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+        }}
       >
         {/* Pin */}
         <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-[#A17120] shadow-[0_0_6px_rgba(161,113,32,0.5)]" />

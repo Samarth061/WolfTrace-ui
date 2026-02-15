@@ -1,4 +1,4 @@
-import type { Case, Evidence, CaseConnection, EvidenceConnection, Tip } from './types'
+import type { Case, Evidence, CaseConnection, EvidenceConnection, Tip, ForensicAnalysis } from './types'
 
 export const mockCases: Case[] = [
   {
@@ -120,6 +120,18 @@ export const mockCases: Case[] = [
     summary: 'The campus radio tower is broadcasting on an unregistered frequency during early morning hours. Content appears to be numeric sequences.',
     evidenceCount: 5,
     storyText: 'Campus radio operators discovered an unauthorized broadcast on 107.3 FM between 3:00 and 4:00 AM. The broadcast contains repeated numeric sequences read by a synthesized voice. FCC records show no licensed operation on this frequency in the area.',
+  },
+  {
+    id: 'case-011',
+    codename: 'The Phantom Fire',
+    location: 'Science Building - East Wing',
+    status: 'Debunked',
+    lastUpdated: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    position: { x: 380, y: 500 },
+    hasHeat: false,
+    summary: 'A student reported a fire in the Science Building, but official records confirm it was a false alarm. A fabricated image circulated on social media claiming to show the fire, revealing a coordinated misinformation campaign.',
+    evidenceCount: 3,
+    storyText: 'On February 13th at 10:15 PM, a student posted on social media claiming to witness a fire in the Science Building East Wing. Campus Safety responded immediately and found no fire, confirming it as a false alarm at 10:22 PM. However, a fake image purporting to show flames in the building circulated widely on student messaging apps. Forensic analysis revealed the image was digitally manipulated using an older fire photo from a different location. The coordinated timing suggests deliberate misinformation.',
   },
 ]
 
@@ -378,6 +390,81 @@ export const mockEvidence: Evidence[] = [
       duration: '00:35:00',
     },
   },
+  // Evidence for case-011 (The Phantom Fire)
+  {
+    id: 'ev-028', caseId: 'case-011', type: 'text', title: 'Social Media Post - Fire Sighting',
+    authenticity: 'suspicious',
+    extractedEntities: ['@campus_watcher_23', 'Science Building', 'East Wing'],
+    extractedLocations: ['Science Building - East Wing', 'Lab 3E'],
+    keyPoints: [
+      'Posted at 10:15 PM on Feb 13',
+      'Claims to see flames from windows',
+      'States fire alarm not activated',
+      'Account created 2 days prior to post'
+    ],
+    source: 'Public Tip',
+    timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: ['New account, suspicious timing'],
+    authenticitySignals: [
+      'Account age: 2 days (suspicious for emergency report)',
+      'No corroborating witnesses',
+      'Posted before any fire alarm or official response',
+      'Geolocation metadata missing from post'
+    ],
+  },
+  {
+    id: 'ev-029', caseId: 'case-011', type: 'text', title: 'Campus Safety Incident Report #2847',
+    authenticity: 'verified',
+    extractedEntities: ['Officer Martinez', 'Campus Safety', 'Incident #2847'],
+    extractedLocations: ['Science Building - East Wing', 'All floors'],
+    keyPoints: [
+      'Responded to social media report at 10:18 PM',
+      'Full building sweep completed by 10:22 PM',
+      'No fire, smoke, or elevated temperatures detected',
+      'Fire suppression system shows no activation',
+      'Confirmed false alarm in official log'
+    ],
+    source: 'Investigator',
+    timestamp: new Date(Date.now() - 24.5 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: ['Official response record', 'Contradicts social media claim'],
+    authenticitySignals: [
+      'Official Campus Safety incident report',
+      'Officer badge verified: Martinez #4219',
+      'Report filed in official emergency system',
+      'Building sensors data confirms no fire event',
+      'Timestamp matches dispatch log'
+    ],
+  },
+  {
+    id: 'ev-030', caseId: 'case-011', type: 'image', title: 'Alleged Fire Photo from Science Building',
+    contentUrl: '/placeholder-evidence.jpg',
+    authenticity: 'suspicious',
+    extractedEntities: ['Image Manipulation', 'Stock Photo', 'Digital Forgery'],
+    extractedLocations: ['Science Building (claimed)', 'Unknown (actual)'],
+    keyPoints: [
+      'Circulated on messaging apps at 10:25 PM (after official all-clear)',
+      'Shows flames in building windows',
+      'Reverse image search: matches 2019 warehouse fire in Ohio',
+      'Image edited to add Science Building signage',
+      'EXIF data stripped, preventing origin verification'
+    ],
+    source: 'Public Tip',
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    reviewed: true,
+    notes: [
+      'Fabricated to support false narrative',
+      'Deliberately posted after official denial for confusion'
+    ],
+    authenticitySignals: [
+      'Reverse image match: Ohio warehouse fire (2019)',
+      'Metadata analysis: EXIF data intentionally removed',
+      'Forensic analysis: Digital cloning detected around signage',
+      'Lighting inconsistencies with Feb 13 weather conditions',
+      'Posted anonymously from burner account'
+    ],
+  },
 ]
 
 export const mockEvidenceConnections: EvidenceConnection[] = [
@@ -404,6 +491,10 @@ export const mockEvidenceConnections: EvidenceConnection[] = [
   { fromId: 'ev-023', toId: 'ev-024', relation: 'supports' },
   { fromId: 'ev-026', toId: 'ev-027', relation: 'supports' },
   { fromId: 'ev-024', toId: 'ev-025', relation: 'related' },
+  // Case 011 connections - Fire misinformation inference
+  { fromId: 'ev-029', toId: 'ev-028', relation: 'contradicts' }, // Official report contradicts student claim
+  { fromId: 'ev-030', toId: 'ev-028', relation: 'supports' },     // Fake image supports false student claim
+  { fromId: 'ev-029', toId: 'ev-030', relation: 'contradicts' }, // Official report contradicts fake image
 ]
 
 export const mockTips: Tip[] = [
@@ -429,3 +520,117 @@ export const mockTips: Tip[] = [
     anonymous: false, name: 'Jordan Kim', timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), referenceCode: 'WT-4824',
   },
 ]
+
+export function generateMockForensicAnalysis(file: File): ForensicAnalysis {
+  const isVideo = file.type.startsWith('video/')
+  const isAudio = file.type.startsWith('audio/')
+  const isImage = file.type.startsWith('image/')
+
+  // Generate randomized but realistic metrics
+  const authenticityScore = 75 + Math.random() * 20
+  const manipulationProbability = Math.random() * 30
+  const qualityScore = 70 + Math.random() * 25
+  const deepfakeProbability = Math.random() * 25 // 0-25% deepfake probability
+  const mlAccuracy = 88 + Math.random() * 10 // 88-98% ML model accuracy
+
+  // File-type-specific predictions
+  const predictions = []
+
+  if (isVideo) {
+    predictions.push({
+      label: 'Location Identified',
+      confidence: 85 + Math.random() * 10,
+      description: 'Video likely recorded at North Campus near Bell Tower based on architectural features and lighting patterns',
+    })
+    predictions.push({
+      label: 'Temporal Analysis',
+      confidence: 75 + Math.random() * 10,
+      description: 'Lighting conditions and shadow analysis suggest recording between 11 PM - 1 AM',
+    })
+    predictions.push({
+      label: 'Audio Anomaly',
+      confidence: 80 + Math.random() * 10,
+      description: 'Unusual frequency pattern detected at 433 MHz range, consistent with wireless data transmission',
+    })
+  } else if (isImage) {
+    predictions.push({
+      label: 'Object Detection',
+      confidence: 88 + Math.random() * 10,
+      description: 'Multiple persons detected in frame. Facial features partially visible.',
+    })
+    predictions.push({
+      label: 'Location Match',
+      confidence: 82 + Math.random() * 10,
+      description: 'Background architecture matches Arts District Block 7 based on visual comparison',
+    })
+    predictions.push({
+      label: 'EXIF Analysis',
+      confidence: 90 + Math.random() * 8,
+      description: 'Metadata timestamps consistent. No signs of timestamp manipulation.',
+    })
+  } else if (isAudio) {
+    predictions.push({
+      label: 'Speaker Identity',
+      confidence: 78 + Math.random() * 12,
+      description: 'Voice pattern analysis suggests 2-3 distinct speakers in the recording',
+    })
+    predictions.push({
+      label: 'Background Noise',
+      confidence: 85 + Math.random() * 10,
+      description: 'Environmental sounds consistent with indoor campus setting. HVAC system audible.',
+    })
+    predictions.push({
+      label: 'Audio Quality',
+      confidence: 80 + Math.random() * 15,
+      description: 'Recording quality suggests consumer-grade microphone. Minor compression artifacts present.',
+    })
+  }
+
+  // Generate findings based on authenticity score
+  const findings = []
+  if (authenticityScore > 85) {
+    findings.push('No signs of digital manipulation detected in detailed frame analysis')
+    findings.push('Metadata timestamps are consistent with file creation date')
+    if (isImage) findings.push('EXIF data intact and shows no signs of tampering')
+    if (isVideo) findings.push('Video stream analysis shows continuous recording with no frame splicing')
+    if (isAudio) findings.push('Audio signature matches expected pattern for recording device')
+  } else if (authenticityScore > 70) {
+    findings.push('Minor inconsistencies detected but within acceptable range for authentic media')
+    findings.push('Metadata appears mostly intact with some standard compression artifacts')
+    if (isImage) findings.push('EXIF data present but some optional fields missing')
+    if (isVideo) findings.push('Video shows typical mobile device recording characteristics')
+  } else {
+    findings.push('Several anomalies detected requiring further investigation')
+    findings.push('Metadata shows some inconsistencies with reported capture time')
+    if (isImage) findings.push('EXIF data partially modified or stripped')
+    if (isVideo) findings.push('Evidence of post-processing or editing detected')
+  }
+
+  if (manipulationProbability > 20) {
+    findings.push(`Manipulation probability elevated (${manipulationProbability.toFixed(1)}%) - recommend additional verification`)
+  } else {
+    findings.push('Low manipulation probability indicates likely authentic source material')
+  }
+
+  return {
+    scanId: `scan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    fileName: file.name,
+    fileType: isVideo ? 'video' : isAudio ? 'audio' : 'image',
+    timestamp: new Date().toISOString(),
+    metrics: {
+      authenticityScore: Math.round(authenticityScore * 10) / 10,
+      manipulationProbability: Math.round(manipulationProbability * 10) / 10,
+      qualityScore: Math.round(qualityScore * 10) / 10,
+      deepfakeProbability: Math.round(deepfakeProbability * 10) / 10,
+      mlAccuracy: Math.round(mlAccuracy * 10) / 10,
+    },
+    predictions,
+    metadata: {
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      format: file.type,
+      dimensions: isImage || isVideo ? '1920x1080' : undefined,
+      duration: isVideo || isAudio ? '00:02:34' : undefined,
+    },
+    findings,
+  }
+}

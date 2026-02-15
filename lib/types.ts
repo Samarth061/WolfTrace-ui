@@ -4,6 +4,7 @@ export type RelationType = 'supports' | 'contradicts' | 'related'
 export type Authenticity = 'verified' | 'suspicious' | 'unknown'
 export type TipCategory = 'Rumor' | 'Scam' | 'Safety' | 'Suspicious' | 'Other'
 export type UserRole = 'Detective' | 'Admin'
+export type SemanticRole = 'Originator' | 'Amplifier' | 'Mutator' | 'Unwitting Sharer'
 
 export interface Case {
   id: string
@@ -38,6 +39,9 @@ export interface Evidence {
     duration: string
   }
   authenticitySignals?: string[]
+  semanticRole?: SemanticRole
+  roleConfidence?: number
+  confidence?: number  // 0-1 score, 1.0 when reviewed by officer
 }
 
 export interface CaseConnection {
@@ -49,6 +53,12 @@ export interface EvidenceConnection {
   fromId: string
   toId: string
   relation: RelationType
+  confidence?: number
+  metadata?: {
+    temporal_score?: number
+    geo_score?: number
+    semantic_score?: number
+  }
 }
 
 export interface Tip {
@@ -62,4 +72,77 @@ export interface Tip {
   email?: string
   timestamp: string
   referenceCode: string
+}
+
+export interface InferenceResult {
+  evidence_id: string
+  inferences: Array<{
+    type: string
+    target_id: string
+    target_title: string
+    confidence: number
+    reasoning: string
+    components: {
+      temporal_score: number
+      geo_score: number
+      semantic_score: number
+    }
+  }>
+  ai_analysis?: {
+    claims_extracted?: Array<{
+      text: string
+      confidence: number
+      entities: string[]
+    }>
+    fact_check_results?: Array<{
+      claim: string
+      rating: string
+      source: string
+    }>
+    urgency_score?: number
+    misinformation_flags?: string[]
+  }
+}
+
+export interface PrioritizedEvidence {
+  id: string
+  title: string
+  priority_score: number
+  reasoning: string
+  recommended_action: string
+  data: any
+}
+
+export interface ForensicAnalysis {
+  scanId: string
+  fileName: string
+  fileType: 'image' | 'video' | 'audio'
+  timestamp: string
+  metrics: {
+    authenticityScore: number
+    manipulationProbability: number
+    qualityScore: number
+    deepfakeProbability: number
+    mlAccuracy: number
+  }
+  predictions: Array<{
+    label: string
+    confidence: number
+    description: string
+  }>
+  metadata: {
+    dimensions?: string
+    duration?: string
+    fileSize: string
+    format: string
+    status?: 'success' | 'fallback' | 'unknown'
+  }
+  findings: string[]
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
 }

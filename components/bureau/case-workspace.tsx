@@ -2,13 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, FileText, Image, Video, Eye, EyeOff, BookOpen, Network, Plus } from 'lucide-react'
+import { ArrowLeft, FileText, Image, Video, Eye, EyeOff, BookOpen, Network, Plus, Sparkles } from 'lucide-react'
 import { useWolfTrace } from '@/lib/store'
 import type { Case, Evidence, EvidenceConnection } from '@/lib/types'
 import { EvidenceNetwork } from './evidence-network'
 import { EvidenceDetail } from './evidence-detail'
 import { StoryPanel } from './story-panel'
 import { AddEvidenceModal } from './add-evidence-modal'
+import { ForensicsLab } from './forensics-lab'
 
 const statusColors: Record<string, string> = {
   'Investigating': 'text-[#A17120] border-[#A17120]/30 bg-[#A17120]/10',
@@ -18,7 +19,7 @@ const statusColors: Record<string, string> = {
   'Closed': 'text-[#999] border-[#555]/30 bg-[#555]/10',
 }
 
-type Tab = 'network' | 'story'
+type Tab = 'network' | 'story' | 'forensics'
 
 export function CaseWorkspace({ caseId }: { caseId: string }) {
   const { cases, evidence, evidenceConnections, updateCaseStatus } = useWolfTrace()
@@ -134,6 +135,17 @@ export function CaseWorkspace({ caseId }: { caseId: string }) {
           <BookOpen className="h-4 w-4" />
           Story View
         </button>
+        <button
+          onClick={() => setTab('forensics')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 font-sans text-sm transition-all ${
+            tab === 'forensics'
+              ? 'border-[#A17120] text-[#A17120]'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          Forensics Lab
+        </button>
       </div>
 
       {/* Main content */}
@@ -155,8 +167,10 @@ export function CaseWorkspace({ caseId }: { caseId: string }) {
               />
             )}
           </>
-        ) : (
+        ) : tab === 'story' ? (
           <StoryPanel caseData={caseData} evidence={caseEvidence} />
+        ) : (
+          <ForensicsLab caseId={caseId} />
         )}
       </div>
 
